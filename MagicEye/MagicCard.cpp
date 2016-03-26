@@ -33,13 +33,30 @@ MagicCard::MagicCard(const Json::Value json_card, const CardDetails::CardSet set
 }
 
 
+MagicCard::MagicCard(cv::Mat & cardImage)
+	:
+	_name(""),
+	_imageFilePath(""),
+	_set(CardDetails::ALA),
+	_type(CardDetails::Unidentified),
+	_fcolor(CardDetails::Unsure),
+	_perceivedTextVerbosity(0.0)
+{
+
+	/// TODO need to get card image into "loadCardImage"
+	// Analyze card
+	locateCardRegions();
+}
+
+
 MagicCard::MagicCard(const std::string imagePath)
 	:
 	_name(""),
 	_imageFilePath(imagePath),
 	_set(CardDetails::ALA),
 	_type(CardDetails::Unidentified),
-	_fcolor(CardDetails::Unsure)
+	_fcolor(CardDetails::Unsure),
+	_perceivedTextVerbosity(0.0)
 {
 	// Analyze card
 	locateCardRegions();
@@ -75,6 +92,27 @@ cv::Mat MagicCard::loadCardImage() const
 
 	return cardImage;
 }
+
+
+CardDetails::FrameColor MagicCard::getFrameColor() const
+{
+	return _fcolor;
+}
+
+
+CardDetails::CardSet MagicCard::getCardSet() const
+{
+	return _set;
+}
+
+
+void MagicCard::deepAnalyze()
+{
+	analyzeTextBox();
+	analyzeArt();
+	analyzeFeatures();
+}
+
 
 void MagicCard::locateCardRegions()
 {
@@ -131,6 +169,9 @@ cv::Mat MagicCard::getFrameHistogram() const
 
 	cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 2, histSize, ranges, true, false);
 
+	// normalize for all resolutions
+	cv::normalize(frameHist, frameHist);
+
 	return frameHist;
 }
 
@@ -178,7 +219,32 @@ std::string MagicCard::toString() const
 		break;
 	}
 
+	// print text box verbosity
+	description << "Perceived text amout: ";
+	description << _perceivedTextVerbosity << std::endl;
+
 	return description.str();
+}
+
+
+double MagicCard::compareLikeness(MagicCard const * const cardOne, MagicCard const * const cardTwo)
+{
+	const double deltaE_comp = DeltaEGrid::compare(cardOne->_artDeltaEGrid, cardTwo->_artDeltaEGrid);
+	const double histGrid_comp = HistoGrid::compare(cardOne->_artHistoGrid, cardTwo->_artHistoGrid);
+
+	return deltaE_comp + histGrid_comp;
+}
+
+
+double MagicCard::compareDeltaEGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo)
+{
+	return DeltaEGrid::compare(cardOne->_artDeltaEGrid, cardTwo->_artDeltaEGrid);
+}
+
+
+double MagicCard::compareHSVGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo)
+{
+	return HistoGrid::compare(cardOne->_artHistoGrid, cardTwo->_artHistoGrid);
 }
 
 
@@ -235,4 +301,27 @@ cv::Mat MagicCard::getBorderlessCardImage() const
 {
 	cv::Mat cardImage = loadCardImage();
 	return cardImage(_borderlessROI);
+}
+
+
+void MagicCard::analyzeTextBox()
+{
+	// START FROM HERE.
+	_perceivedTextVerbosity = 0.0;
+}
+
+
+void MagicCard::analyzeArt()
+{
+	// Find HSL histogram of entire art
+	cv::Mat cardArt = getBorderlessCardImage()(_artROI);
+	_artHistoGrid = HistoGrid(cardArt);
+	_artDeltaEGrid = DeltaEGrid(cardArt);
+}
+
+
+void MagicCard::analyzeFeatures()
+{
+	_featurePoints.clear();
+	// do more
 }

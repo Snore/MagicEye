@@ -38,7 +38,7 @@ CardDatabase::CardDatabase()
 {
 	initializeCardFrameHistograms();
 
-	// Forgive me Father for I have sinned
+	/* // Break in case of histogram identity crisis
 	drawHistogram(_greenFrameHistogram, 4, 16, "green average");
 	drawHistogram(_redFrameHistogram, 4, 16, "red average");
 	drawHistogram(_blueFrameHistogram, 4, 16, "blue average");
@@ -46,6 +46,7 @@ CardDatabase::CardDatabase()
 	drawHistogram(_blackFrameHistogram, 4, 16, "black average");
 	drawHistogram(_yellowFrameHistogram, 4, 16, "multi average");
 	drawHistogram(_artifactFrameHistogram, 4, 16, "colorless average");
+	*/
 }
 
 
@@ -84,6 +85,52 @@ bool CardDatabase::loadSet(const CardDetails::CardSet set)
 }
 
 
+std::vector<MagicCard*> CardDatabase::returnMostAlike(MagicCard const * const cardToMatch_ptr, const int groupSize) const
+{
+	std::vector<MagicCard*> bestMatches;
+	std::vector<MagicCard*> remainingList;
+
+	// Select from only cards that match the unidentified card's frame color
+	if (cardToMatch_ptr->getFrameColor() != CardDetails::Unsure)
+	{
+		// Eliminate all cards that do not share a frame color with the card to match
+		remainingList = selectFrameColorFrom(_masterList, cardToMatch_ptr->getFrameColor());
+	}
+	else
+	{
+		// If the unidentified card doesn't have its frame color discerned yet, then need to look at all cards
+		remainingList = _masterList;
+	}
+
+	std::vector<double> matchesValues(remainingList.size());
+
+	// calculate the "Card comparison" value between the passed in card and every remaining card in the query
+	for (auto itr = std::make_pair(remainingList.cbegin(), matchesValues.begin()); itr.first != remainingList.cend(); ++itr.first, ++itr.second)
+	{
+		*itr.second = MagicCard::compareLikeness(cardToMatch_ptr, *itr.first);
+	}
+
+	// sort the card pointers from most matching to least matching
+	for (int superIndex = 0; superIndex < groupSize; ++superIndex)
+	{
+		double winningValue = matchesValues[0];
+		int winningIndex = 0;
+		for (int index = 1; index < matchesValues.size(); ++index)
+		{
+			if (matchesValues[index] < winningValue)
+			{
+				winningValue = matchesValues[index];
+				winningIndex = index;
+			}
+		}
+		bestMatches.push_back(remainingList[winningIndex]);
+		matchesValues[winningIndex] = DBL_MAX;
+	}
+
+	return bestMatches;
+}
+
+
 MagicCard CardDatabase::getCard()
 {
 	// Still testing
@@ -91,10 +138,17 @@ MagicCard CardDatabase::getCard()
 }
 
 
+MagicCard CardDatabase::getCard(const int index) const
+{
+	return *_masterList[index];
+}
+
+
 void CardDatabase::analyzeMasterCard(MagicCard * cardToAnalyze) const
 {
 	// Still testing
 	cardToAnalyze->setCardFrameColor(getCardColor(cardToAnalyze));
+	cardToAnalyze->deepAnalyze();
 }
 
 
@@ -202,6 +256,58 @@ void CardDatabase::initializeCardFrameHistograms()
 }
 
 
+std::vector<MagicCard*> CardDatabase::selectFrameColorFrom(const std::vector<MagicCard*> & fromCards, const CardDetails::FrameColor selectColor) const
+{
+	std::vector<MagicCard*> colorOnlyCards(fromCards.size());
+
+	// copy
+	std::vector<MagicCard*>::const_iterator current = fromCards.cbegin();
+	std::vector<MagicCard*>::const_iterator end = fromCards.cend();
+	std::vector<MagicCard*>::iterator result = colorOnlyCards.begin();
+
+	while (current != end)
+	{
+		if ((*current)->getFrameColor() == selectColor)
+		{
+			*result = *current;
+			++result;
+		}
+		++current;
+	}
+
+	// shrink to fit
+	colorOnlyCards.resize(std::distance(colorOnlyCards.begin(), result));
+
+	return colorOnlyCards;
+}
+
+
+std::vector<MagicCard*> CardDatabase::selectSetFrom(const std::vector<MagicCard*> & fromCards, const CardDetails::CardSet selectSet) const
+{
+	std::vector<MagicCard*> setOnlyCards(fromCards.size());
+
+	// copy
+	std::vector<MagicCard*>::const_iterator current = fromCards.cbegin();
+	std::vector<MagicCard*>::const_iterator end = fromCards.cend();
+	std::vector<MagicCard*>::iterator result = setOnlyCards.begin();
+
+	while (current != end)
+	{
+		if ((*current)->getCardSet() == selectSet)
+		{
+			*result = *current;
+			++result;
+		}
+		++current;
+	}
+
+	// shrink to fit
+	setOnlyCards.resize(std::distance(setOnlyCards.begin(), result));
+
+	return setOnlyCards;
+}
+
+
 CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 {
 	const int COMP_HIST_METHOD = CV_COMP_CHISQR;
@@ -211,7 +317,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	const cv::Mat cardFrameHistogram = card->getFrameHistogram();
 
 	// Green
-	const double greenFrameDistance = cv::compareHist(cardFrameHistogram, _greenFrameHistogram, COMP_HIST_METHOD);
+	//const double greenFrameDistance = cv::compareHist(cardFrameHistogram, _greenFrameHistogram, COMP_HIST_METHOD);
+	const double greenFrameDistance = cv::compareHist(_greenFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (greenFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Green;
@@ -219,7 +326,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// Red
-	const double redFrameDistance = cv::compareHist(cardFrameHistogram, _redFrameHistogram, COMP_HIST_METHOD);
+	//const double redFrameDistance = cv::compareHist(cardFrameHistogram, _redFrameHistogram, COMP_HIST_METHOD);
+	const double redFrameDistance = cv::compareHist(_redFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (redFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Red;
@@ -227,7 +335,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// Blue
-	const double blueFrameDistance = cv::compareHist(cardFrameHistogram, _blueFrameHistogram, COMP_HIST_METHOD);
+	//const double blueFrameDistance = cv::compareHist(cardFrameHistogram, _blueFrameHistogram, COMP_HIST_METHOD);
+	const double blueFrameDistance = cv::compareHist(_blueFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (blueFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Blue;
@@ -235,7 +344,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// White
-	const double whiteFrameDistance = cv::compareHist(cardFrameHistogram, _whiteFrameHistogram, COMP_HIST_METHOD);
+	//const double whiteFrameDistance = cv::compareHist(cardFrameHistogram, _whiteFrameHistogram, COMP_HIST_METHOD);
+	const double whiteFrameDistance = cv::compareHist(_whiteFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (whiteFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::White;
@@ -243,7 +353,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// Black
-	const double blackFrameDistance = cv::compareHist(cardFrameHistogram, _blackFrameHistogram, COMP_HIST_METHOD);
+	//const double blackFrameDistance = cv::compareHist(cardFrameHistogram, _blackFrameHistogram, COMP_HIST_METHOD);
+	const double blackFrameDistance = cv::compareHist(_blackFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (blackFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Black;
@@ -251,7 +362,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// Multi-color
-	const double yellowFrameDistance = cv::compareHist(cardFrameHistogram, _yellowFrameHistogram, COMP_HIST_METHOD);
+	//const double yellowFrameDistance = cv::compareHist(cardFrameHistogram, _yellowFrameHistogram, COMP_HIST_METHOD);
+	const double yellowFrameDistance = cv::compareHist(_yellowFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (yellowFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Multi;
@@ -259,7 +371,8 @@ CardDetails::FrameColor CardDatabase::getCardColor(const MagicCard* card) const
 	}
 
 	// Colorless
-	const double colorlessFrameDistance = cv::compareHist(cardFrameHistogram, _artifactFrameHistogram, COMP_HIST_METHOD);
+	//const double colorlessFrameDistance = cv::compareHist(cardFrameHistogram, _artifactFrameHistogram, COMP_HIST_METHOD);
+	const double colorlessFrameDistance = cv::compareHist(_artifactFrameHistogram, cardFrameHistogram, COMP_HIST_METHOD);
 	if (colorlessFrameDistance < bestMatchingDistance)
 	{
 		bestMatchingColor = CardDetails::Colorless;

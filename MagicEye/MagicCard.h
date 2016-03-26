@@ -5,6 +5,10 @@
 #include "json\json.h"
 #include "CardDetails.h"
 
+// testing
+#include "HistoGrid.h"
+#include "DeltaEGrid.h"
+
 namespace CardMeasurements
 {
 	const int HueBins = 16;
@@ -15,16 +19,25 @@ class MagicCard
 {
 public:
 	MagicCard(const Json::Value json_card, const CardDetails::CardSet set);
+	MagicCard(cv::Mat & cardImage);
 	MagicCard(const std::string imagePath);
 	MagicCard(const std::string name, const std::string imagePath, const CardDetails::CardSet set, const CardDetails::Type type);
 	~MagicCard();
 
 	cv::Mat loadCardImage() const;
+	CardDetails::FrameColor getFrameColor() const;
+	CardDetails::CardSet getCardSet() const;
+	void deepAnalyze();
+
+	// discern frame histogram color
 	cv::Mat getFrameHistogram() const;
 	void setCardFrameColor(const CardDetails::FrameColor fcolor);
 
 	// DEBUG
 	std::string toString() const;
+	static double compareLikeness(MagicCard const * const cardOne, MagicCard const * const cardTwo);
+	static double compareDeltaEGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo);
+	static double compareHSVGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo);
 
 private:
 	// card properties
@@ -35,6 +48,10 @@ private:
 
 	// Card image properties
 	CardDetails::FrameColor _fcolor;
+	double _perceivedTextVerbosity; //analyzeTextBox
+	HistoGrid _artHistoGrid; //analyzeArt
+	DeltaEGrid _artDeltaEGrid; // analyzeArt
+	std::vector<cv::Point> _featurePoints; //analyzeFeatures
 	cv::Rect _artROI;
 	cv::Rect _textROI;
 	cv::Rect _borderlessROI;
@@ -44,5 +61,9 @@ private:
 	cv::Rect findBorderlessROI(cv::Mat & wholeCardImage) const;
 	cv::Mat getFrameOnlyMask() const;
 	cv::Mat getBorderlessCardImage() const;
+
+	void analyzeTextBox();
+	void analyzeArt();
+	void analyzeFeatures();
 };
 

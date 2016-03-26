@@ -48,15 +48,34 @@ void jumpXFrames(cv::VideoCapture & cap, const int framesToJump)
 
 int main(int argc, char** argv)
 {
-	CardDatabase cdb;
-	cdb.loadSet(CardDetails::RTR);  //RTR //ISD
+	/// card image processing test
+	//
 
+	/// Database / real loop
+	CardDatabase cdb;
+	cdb.loadSet(CardDetails::RTR); // Return to Ravnica block
+	cdb.loadSet(CardDetails::GTC);
+	cdb.loadSet(CardDetails::DGM);
+	cdb.loadSet(CardDetails::ISD); // Innistrad block
+	cdb.loadSet(CardDetails::DKA);
+	cdb.loadSet(CardDetails::AVR);
+	cdb.loadSet(CardDetails::ROE); // Zendikar block
+	std::cout << "Done loading card database.\n";
+
+	//MagicCard myCard = cdb.getCard(3);
+	MagicCard myCard("Assets\\TestCards\\knightly valor010.jpg");
+	myCard.setCardFrameColor(cdb.getCardColor(&myCard));
+	myCard.deepAnalyze();
+	std::cout << myCard.toString() << "\n";
+	cv::imshow("MyCard", myCard.loadCardImage());
+
+	/*
 	while (true)
 	{
 		MagicCard test = cdb.getCard();
-		//test.analyzeCardImage();
+		MagicCard::compare(test, myCard);
 		cv::imshow("Card Image", test.loadCardImage());
-		drawHistogram(test.getFrameHistogram(), CardMeasurements::SaturationBins, CardMeasurements::HueBins);
+		//drawHistogram(test.getFrameHistogram(), CardMeasurements::SaturationBins, CardMeasurements::HueBins);
 		std::cout << test.toString() << "\n";
 
 		if (cv::waitKey(0) == 'q')
@@ -64,6 +83,16 @@ int main(int argc, char** argv)
 			break;
 		}
 	}
+	*/
+
+	/// Database search test
+	std::vector<MagicCard*> matches = cdb.returnMostAlike(&myCard, 6);
+	cv::imshow("1st match", matches[0]->loadCardImage());
+	cv::imshow("2nd match", matches[1]->loadCardImage());
+	cv::imshow("3rd match", matches[2]->loadCardImage());
+	cv::imshow("4th match", matches[3]->loadCardImage());
+	cv::imshow("5th match", matches[4]->loadCardImage());
+	cv::imshow("6th match", matches[5]->loadCardImage());
 
 	
 	/// Video test
@@ -106,6 +135,6 @@ int main(int argc, char** argv)
 		}
 	}
 	*/
-
+	cv::waitKey();
 	return 0;
 }
