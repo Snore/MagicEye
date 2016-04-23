@@ -13,6 +13,7 @@ namespace CardMeasurements
 {
 	const int HueBins = 16;
 	const int SaturationBins = 4;
+	const int ValueBins = 3;
 }
 
 class MagicCard
@@ -27,17 +28,22 @@ public:
 	cv::Mat loadCardImage() const;
 	CardDetails::FrameColor getFrameColor() const;
 	CardDetails::CardSet getCardSet() const;
-	void deepAnalyze();
+	void deepAnalyze(); // TODO make this private?
 
 	// discern frame histogram color
 	cv::Mat getFrameHistogram() const;
+	cv::Scalar getFrameMeanColor_CIELAB() const;
+	cv::Scalar getFrameMeanColor_BGR() const;
 	void setCardFrameColor(const CardDetails::FrameColor fcolor);
 
-	// DEBUG
 	std::string toString() const;
 	static double compareLikeness(MagicCard const * const cardOne, MagicCard const * const cardTwo);
 	static double compareDeltaEGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo);
 	static double compareHSVGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo);
+	static std::string FrameColorToString(const CardDetails::FrameColor fcolor);
+
+	// DEBUG
+	cv::Mat getBorderlessCardImage() const; // DEBUG
 
 private:
 	// card properties
@@ -45,6 +51,7 @@ private:
 	std::string _imageFilePath;
 	CardDetails::CardSet _set;
 	CardDetails::Type _type;
+	cv::Mat _ROIImage;
 
 	// Card image properties
 	CardDetails::FrameColor _fcolor;
@@ -60,7 +67,7 @@ private:
 	void locateCardRegions(); // Needs to be called before other functions
 	cv::Rect findBorderlessROI(cv::Mat & wholeCardImage) const;
 	cv::Mat getFrameOnlyMask() const;
-	cv::Mat getBorderlessCardImage() const;
+	//cv::Mat getBorderlessCardImage() const;
 
 	void analyzeTextBox();
 	void analyzeArt();

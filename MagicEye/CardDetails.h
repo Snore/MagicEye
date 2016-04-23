@@ -13,7 +13,8 @@ namespace CardDetails
 		Green,
 		White,
 		Black,
-		Multi
+		Multi,
+		Land_Color
 	};
 
 	enum Type
@@ -27,6 +28,7 @@ namespace CardDetails
 		Land,
 		Planeswalker
 	};
+
 	static const std::unordered_map<std::string, Type> Type_parse({ { "Unidentified", Unidentified },
 	{ "Instant", Instant },
 	{ "Sorcery", Sorcery },
@@ -38,6 +40,7 @@ namespace CardDetails
 
 	enum CardSet
 	{
+		Unknown,
 		_10E,
 		_2ED,
 		_3ED,

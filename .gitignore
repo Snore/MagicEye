@@ -206,7 +206,14 @@ FakesAssemblies/
 # Visual Studio 6 workspace options file
 *.opt
 
+*.VC.opendb
+*.VC.db
+
 # LightSwitch generated files
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+/MagicEye/Assets
+/MagicEye.sln
+/MagicEye/MagicEye.vcxproj.filters
+/MagicEye/MagicEye.vcxproj

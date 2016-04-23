@@ -7,6 +7,11 @@
 #include "CardFinder.h"
 #include "CardDatabase.h"
 
+/// FOR DEMO ONLY
+#include <chrono>
+CardDatabase cdb;
+std::vector<TableCard> foundCards;
+cv::Mat scene;
 
 //FOR TESTING ONLY
 void drawHistogram(cv::MatND & histogram, const int sbins, const int hbins)
@@ -45,60 +50,61 @@ void jumpXFrames(cv::VideoCapture & cap, const int framesToJump)
 
 }
 
+// FOR DEMO ONLY
+void mouseEventCallback(int mouseEvent, int x, int y, int flags, void* userData)
+{
+	if (mouseEvent == CV_EVENT_LBUTTONDOWN)
+	{
+		std::cout << "Mouse pointer X: " << x << " Y: " << y << "\n";
+
+		cv::Point mousePoint(x, y);
+		for (auto tableCardItr = foundCards.cbegin(); tableCardItr != foundCards.cend(); ++tableCardItr)
+		{
+			// find which rectangle contains the mouse pointer if any
+			if (tableCardItr->getBoundingRect().contains(mousePoint))
+			{
+				std::chrono::time_point<std::chrono::system_clock> start, end;
+				start = std::chrono::system_clock::now();
+
+				std::vector<MagicCard*> matches = cdb.returnMostAlike(tableCardItr->getMagicCard(), 5);
+
+				end = std::chrono::system_clock::now();
+				std::chrono::duration<double> elapsed_seconds = end - start;
+				cv::imshow("1st match", matches[0]->loadCardImage());
+				cv::imshow("2nd match", matches[1]->loadCardImage());
+				cv::imshow("3rd match", matches[2]->loadCardImage());
+				cv::imshow("4th match", matches[3]->loadCardImage());
+				cv::imshow("5th match", matches[4]->loadCardImage());
+				std::cout << "Done finding best match.\nElapsed time: " << elapsed_seconds.count() << " seconds\n";
+				break;
+			}
+		}
+	}
+}
+
 
 int main(int argc, char** argv)
 {
-	/// card image processing test
-	//
-
 	/// Database / real loop
-	CardDatabase cdb;
-	cdb.loadSet(CardDetails::RTR); // Return to Ravnica block
-	cdb.loadSet(CardDetails::GTC);
-	cdb.loadSet(CardDetails::DGM);
-	cdb.loadSet(CardDetails::ISD); // Innistrad block
-	cdb.loadSet(CardDetails::DKA);
+	///CardDatabase cdb; TODO FOR DEMO ONLY
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+	//cdb.loadSet(CardDetails::RTR); // Return to Ravnica block
+	//cdb.loadSet(CardDetails::GTC);
+	//cdb.loadSet(CardDetails::DGM);
+	//cdb.loadSet(CardDetails::ISD); // Innistrad block
+	//cdb.loadSet(CardDetails::DKA);
 	cdb.loadSet(CardDetails::AVR);
-	cdb.loadSet(CardDetails::ROE); // Zendikar block
-	std::cout << "Done loading card database.\n";
-
-	//MagicCard myCard = cdb.getCard(3);
-	MagicCard myCard("Assets\\TestCards\\knightly valor010.jpg");
-	myCard.setCardFrameColor(cdb.getCardColor(&myCard));
-	myCard.deepAnalyze();
-	std::cout << myCard.toString() << "\n";
-	cv::imshow("MyCard", myCard.loadCardImage());
-
-	/*
-	while (true)
-	{
-		MagicCard test = cdb.getCard();
-		MagicCard::compare(test, myCard);
-		cv::imshow("Card Image", test.loadCardImage());
-		//drawHistogram(test.getFrameHistogram(), CardMeasurements::SaturationBins, CardMeasurements::HueBins);
-		std::cout << test.toString() << "\n";
-
-		if (cv::waitKey(0) == 'q')
-		{
-			break;
-		}
-	}
-	*/
-
-	/// Database search test
-	std::vector<MagicCard*> matches = cdb.returnMostAlike(&myCard, 6);
-	cv::imshow("1st match", matches[0]->loadCardImage());
-	cv::imshow("2nd match", matches[1]->loadCardImage());
-	cv::imshow("3rd match", matches[2]->loadCardImage());
-	cv::imshow("4th match", matches[3]->loadCardImage());
-	cv::imshow("5th match", matches[4]->loadCardImage());
-	cv::imshow("6th match", matches[5]->loadCardImage());
-
+	//cdb.loadSet(CardDetails::ROE); // Zendikar block
+	//cdb.loadSet(CardDetails::_10E); // Tenth edition
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "Done loading card database.\nElapsed time: " << elapsed_seconds.count() << " seconds\n";
+	std::cout << "loaded : " << cdb.toString() << "\n";
 	
 	/// Video test
-	/*
-	cv::VideoCapture cap("Assets\\videos\\Pro Tour Return to Ravnica- Finals.mp4");
-	cv:VideoCapture * cap = new VideoCapture("Assets\\videos\\Pro Tour Return to Ravnica- Finals.mp4")
+	cv::VideoCapture cap("Assets\\videos\\Pro Tour Return to Ravnica- Finals.mp4"); //1251
+	//cv::VideoCapture cap("Assets\\videos\\Pro Tour Avacyn Restored Top 8 Finals.mp4"); //13940
 	if (!cap.isOpened())
 	{
 		std::cout << "Cannot open the video file.\n";
@@ -107,10 +113,11 @@ int main(int argc, char** argv)
 
 	/// Display
 	cv::namedWindow("Magic eye", CV_WINDOW_AUTOSIZE);
+	cv::setMouseCallback("Magic eye", mouseEventCallback, NULL);
 	//cv::imshow("Magic eye", image);
 
-	jumpXFrames(cap, 1251);
-	unsigned int frameNumber = 1251;
+	jumpXFrames(cap, 4208);
+	unsigned int frameNumber = 4208; //4208 for multi cards and stacked cards // 1251 for beginning
 	CardFinder cardFinder;
 	while (true)
 	{
@@ -123,7 +130,8 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			cardFinder.findAllCards(frame);
+			frame = cv::imread("Assets\\videos\\reasonable2.jpg", CV_LOAD_IMAGE_COLOR);
+			foundCards = cardFinder.findAllCards(frame);
 			std::cout << "Frame: ";
 			std::cout << frameNumber++;
 			std::cout << std::endl;
@@ -134,7 +142,5 @@ int main(int argc, char** argv)
 			break;
 		}
 	}
-	*/
-	cv::waitKey();
 	return 0;
 }

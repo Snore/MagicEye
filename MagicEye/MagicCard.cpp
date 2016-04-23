@@ -40,10 +40,9 @@ MagicCard::MagicCard(cv::Mat & cardImage)
 	_set(CardDetails::ALA),
 	_type(CardDetails::Unidentified),
 	_fcolor(CardDetails::Unsure),
-	_perceivedTextVerbosity(0.0)
+	_perceivedTextVerbosity(0.0),
+	_ROIImage(cardImage.clone())
 {
-
-	/// TODO need to get card image into "loadCardImage"
 	// Analyze card
 	locateCardRegions();
 }
@@ -83,14 +82,22 @@ MagicCard::~MagicCard()
 
 cv::Mat MagicCard::loadCardImage() const
 {
-	cv::Mat cardImage = cv::imread(_imageFilePath, CV_LOAD_IMAGE_COLOR);
-	if (!cardImage.data)
+	if (_imageFilePath.length() > 0)
 	{
-		std::cerr << "Failed to load image for " << _name << " located at: " << _imageFilePath << "\n";
-		assert(false);
-	}
+		cv::Mat cardImage = cv::imread(_imageFilePath, CV_LOAD_IMAGE_COLOR);
+		if (!cardImage.data)
+		{
+			std::cerr << "Failed to load image for " << _name << " located at: " << _imageFilePath << "\n";
+			assert(false);
+		}
 
-	return cardImage;
+		return cardImage;
+	}
+	else
+	{
+		// If not a card for the HDD, return local image
+		return _ROIImage;
+	}
 }
 
 
@@ -161,18 +168,38 @@ cv::Mat MagicCard::getFrameHistogram() const
 	cv::cvtColor(getBorderlessCardImage(), cardHLS, CV_BGR2HLS);
 
 	int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins };
+	//int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins, CardMeasurements::ValueBins };
 	float hranges[] = { 0, 180 };
 	float sranges[] = { 0, 256 };
+	float vranges[] = { 0, 256 };
 	const float * ranges[] = { hranges, sranges };
+	//const float * ranges[] = { hranges, sranges, vranges };
 	cv::Mat frameHist;
 	int channels[] = { 0, 1 };
+	//int channels[] = { 0, 1, 2};
 
 	cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 2, histSize, ranges, true, false);
+	//cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 3, histSize, ranges, true, false);
 
 	// normalize for all resolutions
 	cv::normalize(frameHist, frameHist);
 
 	return frameHist;
+}
+
+
+cv::Scalar MagicCard::getFrameMeanColor_CIELAB() const
+{
+	cv::Mat imageLAB;
+	cv::cvtColor(getBorderlessCardImage(), imageLAB, CV_BGR2Lab);
+	///cv::cvtColor(getBorderlessCardImage(), imageLAB, CV_BGR2Luv);
+	return cv::mean(imageLAB, getFrameOnlyMask());
+}
+
+
+cv::Scalar MagicCard::getFrameMeanColor_BGR() const
+{
+	return cv::mean(getBorderlessCardImage(), getFrameOnlyMask());
 }
 
 
@@ -191,33 +218,7 @@ std::string MagicCard::toString() const
 
 	// print frame color
 	description << "Frame color: ";
-	switch (_fcolor)
-	{
-	case CardDetails::Red:
-		description << "Red\n";
-		break;
-	case CardDetails::Blue:
-		description << "Blue\n";
-		break;
-	case CardDetails::White:
-		description << "White\n";
-		break;
-	case CardDetails::Black:
-		description << "Black\n";
-		break;
-	case CardDetails::Green:
-		description << "Green\n";
-		break;
-	case CardDetails::Multi:
-		description << "Multi\n";
-		break;
-	case CardDetails::Colorless:
-		description << "Colorless\n";
-		break;
-	default:
-		description << "Who Knows?\n";
-		break;
-	}
+	description << FrameColorToString(_fcolor) << "\n";
 
 	// print text box verbosity
 	description << "Perceived text amout: ";
@@ -245,6 +246,41 @@ double MagicCard::compareDeltaEGrid(MagicCard const * const cardOne, MagicCard c
 double MagicCard::compareHSVGrid(MagicCard const * const cardOne, MagicCard const * const cardTwo)
 {
 	return HistoGrid::compare(cardOne->_artHistoGrid, cardTwo->_artHistoGrid);
+}
+
+
+std::string MagicCard::FrameColorToString(const CardDetails::FrameColor fcolor)
+{
+	switch (fcolor)
+	{
+	case CardDetails::Red:
+		return "Red";
+		break;
+	case CardDetails::Blue:
+		return "Blue";
+		break;
+	case CardDetails::White:
+		return "White";
+		break;
+	case CardDetails::Black:
+		return "Black";
+		break;
+	case CardDetails::Green:
+		return "Green";
+		break;
+	case CardDetails::Multi:
+		return "Multi";
+		break;
+	case CardDetails::Colorless:
+		return "Colorless";
+		break;
+	case CardDetails::Land_Color:
+		return "Land";
+		break;
+	default:
+		return "Who Knows?";
+		break;
+	}
 }
 
 
