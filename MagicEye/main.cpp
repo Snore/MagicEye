@@ -6,12 +6,14 @@
 
 #include "CardFinder.h"
 #include "CardDatabase.h"
+#include "MagicEyeGUI.h"
 
 /// FOR DEMO ONLY
 #include <chrono>
 CardDatabase cdb;
 std::vector<TableCard> foundCards;
 cv::Mat scene;
+MagicEyeGUI gui("Magic Eye 1");
 
 //FOR TESTING ONLY
 void drawHistogram(cv::MatND & histogram, const int sbins, const int hbins)
@@ -70,11 +72,20 @@ void mouseEventCallback(int mouseEvent, int x, int y, int flags, void* userData)
 
 				end = std::chrono::system_clock::now();
 				std::chrono::duration<double> elapsed_seconds = end - start;
+				/*
 				cv::imshow("1st match", matches[0]->loadCardImage());
 				cv::imshow("2nd match", matches[1]->loadCardImage());
 				cv::imshow("3rd match", matches[2]->loadCardImage());
 				cv::imshow("4th match", matches[3]->loadCardImage());
 				cv::imshow("5th match", matches[4]->loadCardImage());
+				*/
+				gui.setSecondaryDisplayFrame(tableCardItr->getMagicCard()->loadCardImage());
+				gui.setResultCardImage(matches[0]->loadCardImage(), 0);
+				gui.setResultCardImage(matches[1]->loadCardImage(), 1);
+				gui.setResultCardImage(matches[2]->loadCardImage(), 2);
+				gui.setResultCardImage(matches[3]->loadCardImage(), 3);
+				gui.setResultCardImage(matches[4]->loadCardImage(), 4);
+				gui.drawWindow();
 				std::cout << "Done finding best match.\nElapsed time: " << elapsed_seconds.count() << " seconds\n";
 				break;
 			}
@@ -104,7 +115,7 @@ int main(int argc, char** argv)
 	
 	/// Video test
 	cv::VideoCapture cap("Assets\\videos\\Pro Tour Return to Ravnica- Finals.mp4"); //1251
-	//cv::VideoCapture cap("Assets\\videos\\Pro Tour Avacyn Restored Top 8 Finals.mp4"); //13940
+	//cv::VideoCapture cap(ASSETS_PATH + "\\videos\\Pro Tour Avacyn Restored Top 8 Finals.mp4"); //13940
 	if (!cap.isOpened())
 	{
 		std::cout << "Cannot open the video file.\n";
@@ -130,12 +141,14 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			frame = cv::imread("Assets\\videos\\reasonable2.jpg", CV_LOAD_IMAGE_COLOR);
+			frame = cv::imread("Assets\\videos\\reasonable.jpg", CV_LOAD_IMAGE_COLOR);
 			foundCards = cardFinder.findAllCards(frame);
 			std::cout << "Frame: ";
 			std::cout << frameNumber++;
 			std::cout << std::endl;
 		}
+		gui.setMainDisplayFrame(frame);
+		gui.drawWindow();
 		cv::imshow("Magic eye", frame);
 		if (cv::waitKey(0) == 'q')
 		{

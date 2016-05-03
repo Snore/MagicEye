@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DeltaEGrid.h"
 #include <opencv2\imgproc.hpp>
 

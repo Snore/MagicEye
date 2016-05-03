@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "CardDatabase.h"
 #include "json\json.h"
 
@@ -10,7 +11,7 @@
 
 
 //FOR TESTING ONLY
-void drawHistogram(cv::MatND & histogram, const int sbins, const int hbins, std::string windowName)
+void drawHistogram(cv::Mat & histogram, const int sbins, const int hbins, std::string windowName)
 {
 	// DEBUG ONLY
 	double frameMaxVal = 0;
@@ -65,7 +66,7 @@ CardDatabase::~CardDatabase()
 
 bool CardDatabase::loadSet(const CardDetails::CardSet set)
 {
-	std::ifstream magicJSONFile("Assets\\AllSets.json\\AllSets.json");
+	std::ifstream magicJSONFile(ASSETS_PATH + "\\AllSets.json\\AllSets.json");
 	Json::Value magic_json;
 	magicJSONFile >> magic_json;
 	magicJSONFile.close();
@@ -185,12 +186,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	const int numDimens = 2;
 
 	// Green frame samples
-	std::vector<std::string> greenSamplePaths = { "Assets\\FrameTrainingImages\\green\\abundant growth.jpg",
-												  "Assets\\FrameTrainingImages\\green\\baloth cage trap.jpg",
-												  "Assets\\FrameTrainingImages\\green\\beastmaster ascension.jpg",
-												  "Assets\\FrameTrainingImages\\green\\borderland ranger.jpg",
-												  "Assets\\FrameTrainingImages\\green\\harrow.jpg",
-												  "Assets\\FrameTrainingImages\\green\\pulse of the tangle.jpg" };
+	std::vector<std::string> greenSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\green\\abundant growth.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\green\\baloth cage trap.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\green\\beastmaster ascension.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\green\\borderland ranger.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\green\\harrow.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\green\\pulse of the tangle.jpg" };
 	//_greenFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_greenFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_greenFrameMean_CIELAB = cv::Scalar(0.0);
@@ -205,12 +206,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "Green card mean point: X:" << _greenFrameMean_CIELAB[0] << " Y:" << _greenFrameMean_CIELAB[1] << " Z:" << _greenFrameMean_CIELAB[2] << "\n";
 
 	// Red frame samples
-	std::vector<std::string> redSamplePaths = { "Assets\\FrameTrainingImages\\red\\aggravate.jpg",
-												"Assets\\FrameTrainingImages\\red\\ash zealot.jpg",
-												"Assets\\FrameTrainingImages\\red\\brood birthing.jpg",
-												"Assets\\FrameTrainingImages\\red\\curse of bloodletting.jpg",
-												"Assets\\FrameTrainingImages\\red\\savage beating.jpg",
-												"Assets\\FrameTrainingImages\\red\\slobad, goblin tinkerer.jpg" };
+	std::vector<std::string> redSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\red\\aggravate.jpg",
+												ASSETS_PATH + "\\FrameTrainingImages\\red\\ash zealot.jpg",
+												ASSETS_PATH + "\\FrameTrainingImages\\red\\brood birthing.jpg",
+												ASSETS_PATH + "\\FrameTrainingImages\\red\\curse of bloodletting.jpg",
+												ASSETS_PATH + "\\FrameTrainingImages\\red\\savage beating.jpg",
+												ASSETS_PATH + "\\FrameTrainingImages\\red\\slobad, goblin tinkerer.jpg" };
 	//_redFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_redFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_redFrameMean_CIELAB = cv::Scalar(0.0);
@@ -225,12 +226,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "Red card mean point: X:" << _redFrameMean_CIELAB[0] << " Y:" << _redFrameMean_CIELAB[1] << " Z:" << _redFrameMean_CIELAB[2] << "\n";
 
 	// Blue frame samples
-	std::vector<std::string> blueSamplePaths = { "Assets\\FrameTrainingImages\\blue\\captain of the mists.jpg",
-												 "Assets\\FrameTrainingImages\\blue\\chant of the skifsang.jpg",
-												 "Assets\\FrameTrainingImages\\blue\\counterlash.jpg",
-												 "Assets\\FrameTrainingImages\\blue\\hisoka, minamo sensei.jpg",
-												 "Assets\\FrameTrainingImages\\blue\\neurok prodigy.jpg",
-												 "Assets\\FrameTrainingImages\\blue\\psychic overload.jpg" };
+	std::vector<std::string> blueSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\blue\\captain of the mists.jpg",
+												 ASSETS_PATH + "\\FrameTrainingImages\\blue\\chant of the skifsang.jpg",
+												 ASSETS_PATH + "\\FrameTrainingImages\\blue\\counterlash.jpg",
+												 ASSETS_PATH + "\\FrameTrainingImages\\blue\\hisoka, minamo sensei.jpg",
+												 ASSETS_PATH + "\\FrameTrainingImages\\blue\\neurok prodigy.jpg",
+												 ASSETS_PATH + "\\FrameTrainingImages\\blue\\psychic overload.jpg" };
 	//_blueFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_blueFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_blueFrameMean_CIELAB = cv::Scalar(0.0);
@@ -245,12 +246,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "Blue card mean point: X:" << _blueFrameMean_CIELAB[0] << " Y:" << _blueFrameMean_CIELAB[1] << " Z:" << _blueFrameMean_CIELAB[2] << "\n";
 
 	// White frame samples
-	std::vector<std::string> whiteSamplePaths = { "Assets\\FrameTrainingImages\\white\\archangel's light.jpg",
-												  "Assets\\FrameTrainingImages\\white\\burden of guilt.jpg",
-												  "Assets\\FrameTrainingImages\\white\\call to serve.jpg",
-												  "Assets\\FrameTrainingImages\\white\\cursebreak.jpg",
-												  "Assets\\FrameTrainingImages\\white\\pteron ghost.jpg",
-												  "Assets\\FrameTrainingImages\\white\\pulse of the fields.jpg" };
+	std::vector<std::string> whiteSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\white\\archangel's light.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\white\\burden of guilt.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\white\\call to serve.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\white\\cursebreak.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\white\\pteron ghost.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\white\\pulse of the fields.jpg" };
 	//_whiteFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_whiteFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_whiteFrameMean_CIELAB = cv::Scalar(0.0);
@@ -265,12 +266,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "White card mean point: X:" << _whiteFrameMean_CIELAB[0] << " Y:" << _whiteFrameMean_CIELAB[1] << " Z:" << _whiteFrameMean_CIELAB[2] << "\n";
 
 	// Black frame samples
-	std::vector<std::string> blackSamplePaths = { "Assets\\FrameTrainingImages\\black\\burden of greed.jpg",
-												  "Assets\\FrameTrainingImages\\black\\deadly allure.jpg",
-												  "Assets\\FrameTrainingImages\\black\\essence drain.jpg",
-												  "Assets\\FrameTrainingImages\\black\\harvester of souls.jpg",
-												  "Assets\\FrameTrainingImages\\black\\homicidal seclusion.jpg",
-												  "Assets\\FrameTrainingImages\\black\\markov's servant.jpg" };
+	std::vector<std::string> blackSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\black\\burden of greed.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\black\\deadly allure.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\black\\essence drain.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\black\\harvester of souls.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\black\\homicidal seclusion.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\black\\markov's servant.jpg" };
 	//_blackFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_blackFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_blackFrameMean_CIELAB = cv::Scalar(0.0);
@@ -285,12 +286,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "Black card mean point: X:" << _blackFrameMean_CIELAB[0] << " Y:" << _blackFrameMean_CIELAB[1] << " Z:" << _blackFrameMean_CIELAB[2] << "\n";
 
 	// Multi-color frame samples
-	std::vector<std::string> multiSamplePaths = { "Assets\\FrameTrainingImages\\yellow\\bruna, light of alabaster.jpg",
-												  "Assets\\FrameTrainingImages\\yellow\\drogskol captain.jpg",
-												  "Assets\\FrameTrainingImages\\yellow\\gisela, blade of goldnight.jpg",
-												  "Assets\\FrameTrainingImages\\yellow\\havengul lich.jpg",
-												  "Assets\\FrameTrainingImages\\yellow\\ravager of the fells.jpg",
-												  "Assets\\FrameTrainingImages\\yellow\\wrexial, the risen deep.jpg" };
+	std::vector<std::string> multiSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\yellow\\bruna, light of alabaster.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\yellow\\drogskol captain.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\yellow\\gisela, blade of goldnight.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\yellow\\havengul lich.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\yellow\\ravager of the fells.jpg",
+												  ASSETS_PATH + "\\FrameTrainingImages\\yellow\\wrexial, the risen deep.jpg" };
 	//_yellowFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_yellowFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_yellowFrameMean_CIELAB = cv::Scalar(0.0);
@@ -305,12 +306,12 @@ void CardDatabase::initializeCardFrameHistograms()
 	std::cout << "Multi card mean point: X:" << _yellowFrameMean_CIELAB[0] << " Y:" << _yellowFrameMean_CIELAB[1] << " Z:" << _yellowFrameMean_CIELAB[2] << "\n";
 
 	// Colorless frame samples
-	std::vector<std::string> colorlessSamplePaths = { "Assets\\FrameTrainingImages\\artifact\\darksteel brute.jpg",
-												      "Assets\\FrameTrainingImages\\artifact\\darksteel reactor.jpg",
-												      "Assets\\FrameTrainingImages\\artifact\\general's kabuto.jpg",
-												      "Assets\\FrameTrainingImages\\artifact\\hankyu.jpg",
-												      "Assets\\FrameTrainingImages\\artifact\\kusari-gama.jpg",
-												      "Assets\\FrameTrainingImages\\artifact\\muse vessel.jpg" };
+	std::vector<std::string> colorlessSamplePaths = { ASSETS_PATH + "\\FrameTrainingImages\\artifact\\darksteel brute.jpg",
+												      ASSETS_PATH + "\\FrameTrainingImages\\artifact\\darksteel reactor.jpg",
+												      ASSETS_PATH + "\\FrameTrainingImages\\artifact\\general's kabuto.jpg",
+												      ASSETS_PATH + "\\FrameTrainingImages\\artifact\\hankyu.jpg",
+												      ASSETS_PATH + "\\FrameTrainingImages\\artifact\\kusari-gama.jpg",
+												      ASSETS_PATH + "\\FrameTrainingImages\\artifact\\muse vessel.jpg" };
 	//_artifactFrameHistogram = cv::Mat::zeros(CardMeasurements::HueBins, CardMeasurements::SaturationBins, CV_32F);
 	_artifactFrameHistogram = cv::Mat::zeros(numDimens, histogramSizes, CV_32F);
 	_artifactFrameMean_CIELAB = cv::Scalar(0.0);

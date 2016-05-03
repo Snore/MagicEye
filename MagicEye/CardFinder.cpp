@@ -1,6 +1,7 @@
 #include "CardFinder.h"
 #include <opencv2\imgproc.hpp>
 #include <opencv2\highgui.hpp> // DEBUG
+#include <iostream> // DEBUG
 #include <climits>
 
 
@@ -66,24 +67,10 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 		const cv::Rect ROI = cv::boundingRect(*cardEdgeItr) + boundingTableRect.tl();
 
 		// eliminate noise
-		if (ROI.area() > 20)
+		if (ROI.area() > MIN_AREA_ELIMINATION_THRESHOLD)
 		{
-			// TODO: pass in ROI offset so card's bounding box position is global
-			identifyCardsInRegion(scene(ROI), ROI.tl(), _foundCards);
+			identifyCardsInRegion(scene(ROI), ROI.tl(), boundingTableRect, _foundCards);
 		}
-
-		/*
-		cv::RotatedRect minBoundingBox = cv::minAreaRect(*cardEdgeItr);
-		if (minBoundingBox.size.area() > 20)																			// TODO excluded too tiny areas
-		{
-			//TableCard testbox(minBoundingBox, tableTopScene);
-			_foundCards.push_back(TableCard(minBoundingBox, tableTopScene));
-
-			cardROIsInScene.push_back(minBoundingBox.boundingRect());// +boundingTableRect.tl());
-																	 //cardROIsInScene.push_back(cv::boundingRect(*cardEdgeItr) + boundingTableRect.tl()); // need to offset table location in frame location
-			cv::rectangle(scene, cardROIsInScene.back(), CV_RGB(255, 0, 0));												// Debug
-		}
-		*/
 	}
 
 	// Draw rectangles around identified Magic cards
@@ -97,19 +84,21 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 }
 
 
-void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIOffset, std::vector<TableCard>& runningList) const
+void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIOffset, const cv::Rect & tableBB, std::vector<TableCard>& runningList) const
 {
 	// Save a copy of the scene so we can turn it black to sort out stacked cards.
 	cv::Mat originalImage = ROI.clone();
 
 	// threshold away anything that is not dark black
-	cv::Mat bwScene, bwSceneWithColor;
+	cv::Mat bwScene;
 	cv::cvtColor(ROI, bwScene, CV_BGR2GRAY);  // OR: Now filter the black regions by filtering the HSV Range V- 100 to 255. The result will look like this.
 	cv::threshold(bwScene, bwScene, 42, 255, CV_THRESH_BINARY_INV);// | CV_THRESH_OTSU); // was 42
 	
 	// reduce noise with erosion
 	cv::erode(bwScene, bwScene, cv::Mat());
 	cv::dilate(bwScene, bwScene, cv::Mat()); // need this or sometimes borders get cut by erosion
+	//cv::imshow("binScene", bwScene);
+	//cv::waitKey();
 
 	// find edges
 	std::vector<std::vector<cv::Point>> contours;
@@ -181,7 +170,7 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 		}
 
 		// For each card face found; copy, rotate, and add black border. Then ship it to TableCard class
-		runningList.emplace_back(extractCardImage(originalImage, cardBoundingBox, ROIOffset));
+		runningList.emplace_back(extractCardImage(originalImage, cardBoundingBox, ROIOffset, tableBB));
 
 		// Blackout where card used to be for later processing on same region
 		// OPTIMIZATION: Do not have to do if no contours remain at this point
@@ -209,29 +198,43 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 }
 
 
-TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::RotatedRect boundingRect, const cv::Point worldPosition) const
+TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::RotatedRect boundingRect, const cv::Point worldPosition, const cv::Rect & tableBB) const
 {
 	cv::Mat rotatedUpright;
 
 	float boxAngle = boundingRect.angle;
 	cv::Size boxSize = boundingRect.size;
+	cv::Size canvasSize = fromScene.size();
 
-	/// Cards should be right side up.  If it is wider than it is tall, it's sideways and needs to be rotated 90 degrees
-	if (boxSize.width > boxSize.height)
+	// using wrong orientation, correct
+	if (boxAngle < -45.f)
 	{
 		boxAngle += 90.f;
 		cv::swap(boxSize.width, boxSize.height);
 	}
 
+	/// Cards should be right side up.  If it is wider than it is tall, it's sideways and needs to be rotated 90 degrees
+	if (boxSize.width > boxSize.height)  // I don't know if I can trust boxSize; if not, trust canvasSize
+	{
+		boxAngle -= 90.f;
+		
+		cv::swap(boxSize.width, boxSize.height);
+		cv::swap(canvasSize.width, canvasSize.height);
+	}
+
 	cv::Mat rotationMat = cv::getRotationMatrix2D(boundingRect.center, boxAngle, 1.0);
-	cv::warpAffine(fromScene, rotatedUpright, rotationMat, fromScene.size(), CV_INTER_CUBIC);
+
+	// adjust transformation matrix, Makes image dead center
+	rotationMat.at<double>(0, 2) += canvasSize.width / 2.0 - boundingRect.center.x;
+	rotationMat.at<double>(1, 2) += canvasSize.height / 2.0 - boundingRect.center.y;
+
+	cv::warpAffine(fromScene, rotatedUpright, rotationMat, canvasSize, CV_INTER_CUBIC);
 
 	// Need to crop out extra information after rotation
 	cv::Mat croppedToFit;
-	cv::getRectSubPix(rotatedUpright, boxSize, boundingRect.center, croppedToFit);
-
-	// TODO: Need to verify that card is upright and not upside down
-	// IDEA: Depending on which side of the table the card is on, we can assume which way the card is facing.
+	cv::Point cardCenter = cv::Point(canvasSize.width / 2, canvasSize.height / 2);
+	//croppedToFit = rotatedUpright(cv::Rect(cardCenter.x - (boxSize.width / 2), cardCenter.y - (boxSize.height / 2), boxSize.width, boxSize.height));
+	cv::getRectSubPix(rotatedUpright, boxSize, cardCenter/*boundingRect.center*/, croppedToFit);
 
 	// return 
 	const cv::Point2f newCenter(boundingRect.center.x + static_cast<float>(worldPosition.x), boundingRect.center.y + static_cast<float>(worldPosition.y));

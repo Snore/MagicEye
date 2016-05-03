@@ -6,6 +6,13 @@
 class TableCard
 {
 public:
+	enum VisibilityState
+	{
+		Visible,
+		PartialBlocked,
+		Missing
+	};
+
 	TableCard();
 	TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImage);
 	TableCard(const TableCard & obj);
@@ -19,5 +26,10 @@ public:
 private:
 	std::shared_ptr<MagicCard> _assumedCard_ptr;
 	cv::RotatedRect _boundingBoxInScene;
+	CardDetails::FrameColor _cardFrameColor;
+	VisibilityState _visibilityState;
+
+	// functions
+	void makeRightsideUp(cv::Mat & cardImage) const;
 };
 
