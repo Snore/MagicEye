@@ -10,14 +10,24 @@
 TableCard::TableCard()
 	:
 	_assumedCard_ptr(NULL),
-	_boundingBoxInScene()
+	_boundingBoxInScene(),
+	_cardFrameColor(CardDetails::Unsure),
+	_visibilityState(VisibilityState::Missing),
+	_lastReferenced(std::chrono::system_clock::now()),
+	_forceExpire(false),
+	hasBeenIdentified(false)
 {
 }
 
 
-TableCard::TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImage)
+TableCard::TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImage, const VisibilityState vstate)
 	:
-	_boundingBoxInScene(boundingBox)
+	_boundingBoxInScene(boundingBox),
+	_cardFrameColor(CardDetails::Unsure),
+	_visibilityState(vstate),
+	_lastReferenced(std::chrono::system_clock::now()),
+	_forceExpire(false),
+	hasBeenIdentified(false)
 {
 	// add a black border
 	cv::Mat cardImageWithBorder;
@@ -35,7 +45,12 @@ TableCard::TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImag
 TableCard::TableCard(const TableCard & obj)
 	:
 	_assumedCard_ptr(obj._assumedCard_ptr),
-	_boundingBoxInScene(obj._boundingBoxInScene)
+	_boundingBoxInScene(obj._boundingBoxInScene),
+	_cardFrameColor(obj._cardFrameColor),
+	_visibilityState(obj._visibilityState),
+	_lastReferenced(obj._lastReferenced),
+	_forceExpire(obj._forceExpire),
+	hasBeenIdentified(obj.hasBeenIdentified)
 {
 	// Everything else is covered
 }
@@ -73,6 +88,103 @@ bool TableCard::isPointInside(cv::Point point) const
 }
 
 
+TableCard::VisibilityState TableCard::getCardVisibility() const
+{
+	return _visibilityState;
+}
+
+
+CardDetails::FrameColor TableCard::getCardFrameColor() const
+{
+	return _cardFrameColor;
+}
+
+
+void TableCard::setCardFrameColor(const CardDetails::FrameColor fcolor)
+{
+	_cardFrameColor = fcolor;
+	_assumedCard_ptr->setCardFrameColor(fcolor);
+}
+
+
+bool TableCard::isProbablySameTableCard(const TableCard& other) const
+{
+	// get positions
+	cv::Point distanceVector = this->_boundingBoxInScene.center - other._boundingBoxInScene.center;
+	const double distanceBetween = cv::sqrt((distanceVector.x * distanceVector.x) + (distanceVector.y * distanceVector.y));
+
+	// get distance threshold
+	const double smallestDimension = cv::min(this->_boundingBoxInScene.size.height, this->_boundingBoxInScene.size.width);
+	const double distanceThreshold = smallestDimension * 0.2;
+
+	// get volumes
+	const double areaDifference = cv::abs(other._boundingBoxInScene.size.area() - this->_boundingBoxInScene.size.area());
+
+	// get area threshold
+	const double smallestArea = cv::min(other._boundingBoxInScene.size.area(), this->_boundingBoxInScene.size.area());
+	const double areaThreshold = smallestArea * 0.1;
+
+	// Do we need more?
+
+
+	return (distanceBetween < distanceThreshold) && (areaDifference < areaThreshold);
+}
+
+
+double TableCard::distanceFrom(const TableCard& other) const
+{
+	cv::Point distanceVector = this->_boundingBoxInScene.center - other._boundingBoxInScene.center;
+	const double distanceBetween = cv::sqrt((distanceVector.x * distanceVector.x) + (distanceVector.y * distanceVector.y));
+
+	// get volumes
+	const double areaDifference = cv::abs(other._boundingBoxInScene.size.area() - this->_boundingBoxInScene.size.area());
+
+	// get area threshold
+	const double smallestArea = cv::min(other._boundingBoxInScene.size.area(), this->_boundingBoxInScene.size.area());
+	const double areaThreshold = smallestArea * 0.1;
+
+	// Cards are the same size, invalidate distance if the size between two cards is vastly different
+	return (areaDifference < areaThreshold) ? distanceBetween : DBL_MAX;
+}
+
+
+void TableCard::setToAssumedCard(const TableCard& isProbablyThis)
+{
+	assert(this->_visibilityState == VisibilityState::PartialBlockedUnidentified);
+
+	this->_visibilityState = VisibilityState::PartialBlocked;
+	this->_assumedCard_ptr = isProbablyThis._assumedCard_ptr;
+}
+
+
+void TableCard::setToAssumedBoundingBox(const TableCard& isProbablyHere)
+{
+	this->_boundingBoxInScene.center = isProbablyHere._boundingBoxInScene.center;
+	this->_boundingBoxInScene.angle = isProbablyHere._boundingBoxInScene.angle;
+}
+
+
+bool TableCard::checkIfXSecondsSinceLastReference(const double seconds) const
+{
+	// seconds since last referenced
+	const std::chrono::duration<double> lapsedTime = std::chrono::system_clock::now() - _lastReferenced;
+	const std::chrono::duration<double> secondsThreshold(seconds);
+	return _forceExpire || (lapsedTime > secondsThreshold);
+}
+
+
+void TableCard::resetTimedReferenceCheck()
+{
+	_lastReferenced = std::chrono::system_clock::now();
+}
+
+
+void TableCard::expireTimedReferenceCheck()
+{
+	_forceExpire = true;
+}
+
+
 void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 {
 	const double inletRatio = 0.05; // 23 pixel in from 460 px width
@@ -103,7 +215,7 @@ void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 
 	// Sample the two vertical trace lines
 	const int leftColumn = static_cast<int>(cardROI.width * inletRatio);
-	const int rightColumn = cardROI.width - leftColumn;
+	const int rightColumn = cv::min((cardROI.width - leftColumn), (cardROI.width - 1));
 
 	cv::Mat cardAlone = cardImage(cardROI);
 	cv::Rect leftColumnROI = cv::Rect(leftColumn, 0, 1, cardAlone.rows);
@@ -125,16 +237,19 @@ void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 	cv::meanStdDev(leftColumnBW.rowRange(topUpperRangeIndex, topLowerRangeIndex), topMeanLeft, topStdvLeft);
 	cv::meanStdDev(leftColumnBW.rowRange(topLowerRangeIndex, bottomLowerRangeIndex), bottomMeanLeft, bottomStdvLeft);
 
-	//cv::Scalar topMeanRight, topStdvRight, bottomMeanRight, bottomStdvRight;
-	//cv::meanStdDev(leftColumnBW.rowRange(topUpperRangeIndex, topLowerRangeIndex), topMeanRight, topStdvRight);
-	//cv::meanStdDev(leftColumnBW.rowRange(topLowerRangeIndex, bottomLowerRangeIndex), bottomMeanRight, bottomStdvRight);
+	cv::Scalar topMeanRight, topStdvRight, bottomMeanRight, bottomStdvRight;
+	cv::meanStdDev(leftColumnBW.rowRange(topUpperRangeIndex, topLowerRangeIndex), topMeanRight, topStdvRight);
+	cv::meanStdDev(leftColumnBW.rowRange(topLowerRangeIndex, bottomLowerRangeIndex), bottomMeanRight, bottomStdvRight);
 
 	// DECIDE if these fetures tell us that the card is rightside up or not
-	const double topDelta = topMeanLeft[0] - topStdvLeft[0];
-	const double bottomDelta = bottomMeanLeft[0] - bottomStdvLeft[0];
+	//const double topDelta = topMeanLeft[0] - topStdvLeft[0];
+	//const double bottomDelta = bottomMeanLeft[0] - bottomStdvLeft[0];
+	const double topDelta = ((topMeanLeft[0] + topMeanRight[0]) / 2) - topStdvLeft[0] - topStdvRight[0];
+	const double bottomDelta = ((bottomMeanLeft[0] + bottomMeanRight[0]) / 2) - bottomStdvLeft[0] - bottomStdvRight[0];
 
 	//
-	bool isUpsideDown = topDelta > bottomDelta;
+	const bool isUpsideDown = topDelta > bottomDelta;
+	//const bool isUpsideDown = topDelta < bottomDelta;
 	if (isUpsideDown)
 	{
 		cv::flip(cardImage, cardImage, -1);

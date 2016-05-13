@@ -45,6 +45,8 @@ public:
 	// DEBUG
 	cv::Mat getBorderlessCardImage() const; // DEBUG
 
+	bool operator==(const MagicCard& other) const;
+
 private:
 	// card properties
 	std::string _name;

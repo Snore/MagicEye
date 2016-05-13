@@ -10,12 +10,9 @@ public:
 
 	bool loadSet(const CardDetails::CardSet set);
 	std::vector<MagicCard*> returnMostAlike(MagicCard const * const cardToMatch_ptr, const int groupSize) const; //progenator for card matching
-	CardDetails::FrameColor getCardColor(const MagicCard* card) const;
+	CardDetails::FrameColor getLiveCardColor(const MagicCard* card) const; // In a perfect world, break this out into its own class?  Same with its digital sibling
+	void trainLiveCardColor(const MagicCard* card, const CardDetails::FrameColor fcolor);
 	std::string toString() const;
-
-	// Debug
-	MagicCard getCard();
-	MagicCard getCard(const int index) const;
 
 private:
 	// Master card list
@@ -30,22 +27,35 @@ private:
 	cv::Mat _blackFrameHistogram;
 	cv::Mat _yellowFrameHistogram;
 	cv::Mat _artifactFrameHistogram;
+	cv::Mat _landFrameHistogram;
 
 	// Card frame average colors
 	cv::Scalar _greenFrameMean_CIELAB;
-	cv::Scalar _greenFrameMean_BGR;
 	cv::Scalar _redFrameMean_CIELAB;
-	cv::Scalar _redFrameMean_BGR;
 	cv::Scalar _blueFrameMean_CIELAB;
-	cv::Scalar _blueFrameMean_BGR;
 	cv::Scalar _whiteFrameMean_CIELAB;
-	cv::Scalar _whiteFrameMean_BGR;
 	cv::Scalar _blackFrameMean_CIELAB;
-	cv::Scalar _blackFrameMean_BGR;
 	cv::Scalar _yellowFrameMean_CIELAB;
-	cv::Scalar _yellowFrameMean_BGR;
 	cv::Scalar _artifactFrameMean_CIELAB;
-	cv::Scalar _artifactFrameMean_BGR;
+	cv::Scalar _landFrameMean_CIELAB;
+
+	// Live OLMB K-means frame average colors
+	cv::Scalar _greenFrameMean_CIELAB_Live;
+	cv::Scalar _redFrameMean_CIELAB_Live;
+	cv::Scalar _blueFrameMean_CIELAB_Live;
+	cv::Scalar _whiteFrameMean_CIELAB_Live;
+	cv::Scalar _blackFrameMean_CIELAB_Live;
+	cv::Scalar _yellowFrameMean_CIELAB_Live;
+	cv::Scalar _artifactFrameMean_CIELAB_Live;
+	cv::Scalar _landFrameMean_CIELAB_Live;
+	int _greenFrameMean_CIELAB_Live_Samples;
+	int _redFrameMean_CIELAB_Live_Samples;
+	int _blueFrameMean_CIELAB_Live_Samples;
+	int _whiteFrameMean_CIELAB_Live_Samples;
+	int _blackFrameMean_CIELAB_Live_Samples;
+	int _yellowFrameMean_CIELAB_Live_Samples;
+	int _artifactFrameMean_CIELAB_Live_Samples;
+	int _landFrameMean_CIELAB_Live_Samples;
 
 	// set indexes
 	// TODO think about it.  Map of vector<MagicCard*>'s?
@@ -56,6 +66,8 @@ private:
 	void initializeCardFrameHistograms();
 	std::vector<MagicCard*> selectFrameColorFrom(const std::vector<MagicCard*> & fromCards, const CardDetails::FrameColor selectColor) const;
 	std::vector<MagicCard*> selectSetFrom(const std::vector<MagicCard*> & fromCards, const CardDetails::CardSet selectSet) const;
+	CardDetails::FrameColor getDigitalCardColor(const MagicCard* card) const;
 	double calcDeltaE(const cv::Scalar colorPointOne, const cv::Scalar colorPointTwo) const;
+	double calcDeltaE_noChroma(const cv::Scalar colorPointOne, const cv::Scalar colorPointTwo) const;
 };
 

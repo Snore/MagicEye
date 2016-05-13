@@ -15,6 +15,7 @@ public:
 	void setSecondaryDisplayFrame(const cv::Mat & image);
 	void setResultText(const std::string & textToDisplay);
 	void setResultCardImage(const cv::Mat & image, const int position);
+	int returnResultSelectionIndex(const cv::Point & clickCoord) const;
 
 private:
 	static const int WIN_HEIGHT = 1010; //1000 might be more optimal, but will have to resize RESULT_HEIGHT and RESULT_WIDTH
@@ -38,10 +39,12 @@ private:
 	cv::Mat _resultsTextROI;
 	std::vector<cv::Mat> _resultCardsROI;
 
+	// string placements
 	cv::Point _resultsTextPoint;
 	std::string _resultsText;
 
 	std::string _windowName;
+	//cv::Size _lastMainDisplaySize; // break in case of dynamic resizing idea
 
 	// functions
 	void initializeROIs();

@@ -217,22 +217,32 @@ void MagicCard::locateCardRegions()
 
 cv::Mat MagicCard::getFrameHistogram() const
 {
-	cv::Mat cardHLS;
-	cv::cvtColor(getBorderlessCardImage(), cardHLS, CV_BGR2HLS);
+	cv::Mat cardHLS, imageGray, imageColor;
+	imageColor = getBorderlessCardImage();
+	cv::cvtColor(imageColor, imageGray, CV_BGR2GRAY);
+	cv::cvtColor(imageColor, cardHLS, CV_BGR2HLS);
 
-	int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins };
-	//int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins, CardMeasurements::ValueBins };
+	//int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins };
+	int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins, CardMeasurements::ValueBins };
 	float hranges[] = { 0, 180 };
 	float sranges[] = { 0, 256 };
 	float vranges[] = { 0, 256 };
-	const float * ranges[] = { hranges, sranges };
-	//const float * ranges[] = { hranges, sranges, vranges };
+	//const float * ranges[] = { hranges, sranges };
+	const float * ranges[] = { hranges, sranges, vranges };
 	cv::Mat frameHist;
-	int channels[] = { 0, 1 };
-	//int channels[] = { 0, 1, 2};
+	//int channels[] = { 0, 1 };
+	int channels[] = { 0, 1, 2};
 
-	cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 2, histSize, ranges, true, false);
-	//cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 3, histSize, ranges, true, false);
+	// Filter out partial card shadows
+	// the filter should set all the pixels in the shadow to exactly 0; should be rare that this pixel color exists in real life
+	cv::Mat mask;
+	cv::Mat partialShadowMask;
+	cv::threshold(imageGray, partialShadowMask, 0.0, 255, CV_THRESH_BINARY);
+	mask = cv::Mat(partialShadowMask.size(), CV_8UC1);
+	cv::bitwise_and(getFrameOnlyMask(), partialShadowMask, mask);
+
+	//cv::calcHist(&cardHLS, 1, channels, getFrameOnlyMask(), frameHist, 2, histSize, ranges, true, false);
+	cv::calcHist(&cardHLS, 1, channels, mask, frameHist, 3, histSize, ranges, true, false);
 
 	// normalize for all resolutions
 	cv::normalize(frameHist, frameHist);
@@ -243,10 +253,21 @@ cv::Mat MagicCard::getFrameHistogram() const
 
 cv::Scalar MagicCard::getFrameMeanColor_CIELAB() const
 {
-	cv::Mat imageLAB;
-	cv::cvtColor(getBorderlessCardImage(), imageLAB, CV_BGR2Lab);
+	cv::Mat imageLAB, imageGray, imageColor;
+	imageColor = getBorderlessCardImage();
+	cv::cvtColor(imageColor, imageGray, CV_BGR2GRAY);
+	cv::cvtColor(imageColor, imageLAB, CV_BGR2Lab);
 	///cv::cvtColor(getBorderlessCardImage(), imageLAB, CV_BGR2Luv);
-	return cv::mean(imageLAB, getFrameOnlyMask());
+
+	// Filter out partial card shadows
+	// the filter should set all the pixels in the shadow to exactly 0; should be rare that this pixel color exists in real life
+	cv::Mat mask;
+	cv::Mat partialShadowMask;
+	cv::threshold(imageGray, partialShadowMask, 0.0, 255, CV_THRESH_BINARY);
+	mask = cv::Mat(partialShadowMask.size(), CV_8UC1);
+	cv::bitwise_and(getFrameOnlyMask(), partialShadowMask, mask);
+
+	return cv::mean(imageLAB, mask);
 }
 
 
@@ -413,4 +434,11 @@ void MagicCard::analyzeFeatures()
 {
 	_featurePoints.clear();
 	// do more
+}
+
+
+bool MagicCard::operator==(const MagicCard& other) const
+{
+	// Never have I ever seen two cards with the same name in the same set
+	return ((this->_name == other._name) && (this->_set == other._set));
 }

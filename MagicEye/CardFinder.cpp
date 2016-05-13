@@ -3,20 +3,24 @@
 #include <opencv2\highgui.hpp> // DEBUG
 #include <iostream> // DEBUG
 #include <climits>
+#include <algorithm>
 
 
 
-CardFinder::CardFinder()
+CardFinder::CardFinder(CardDatabase * const cdb)
+	:
+	_cdb_ptr(cdb)
 {
 }
 
 
 CardFinder::~CardFinder()
 {
+	_cdb_ptr = NULL;
 }
 
 
-std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
+std::vector<TableCard>* CardFinder::findAllCards(cv::Mat & scene)
 {
 	/// Step 1: find table top
 	/// - caution, shadows may fool
@@ -30,8 +34,11 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 	/// Step 5: For all partial cards,
 	/// ???
 	/// Profit
-	std::vector<cv::Rect> cardROIsInScene;
-	_foundCards.clear();																								// TODO - temp, testing only
+	//_lastFrameCards = _foundCards;																						// TODO maybe make vector of pointers
+	rememberNewCards();
+	forgetOldCards();
+	_biggestBox = cv::Rect();
+	_foundCards.clear();
 
 	/// Step 1: find table top
 	/// - caution, shadows may fool
@@ -47,7 +54,7 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 	cv::Rect boundingTableRect = cv::boundingRect(tableTopMaskPoints);
 
 	// Debug - show where program thinks table top is in scene
-	cv::rectangle(scene, boundingTableRect, CV_RGB(255, 0, 255));														// Debug
+	//cv::rectangle(scene, boundingTableRect, CV_RGB(255, 0, 255));														// Debug
 	
 	// Create ROIs of only the tabletop
 	cv::Mat tableTopScene(scene, boundingTableRect);																	// Is used?
@@ -55,7 +62,7 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 
 	// invert mask within tabletop bounding box to get "object on table" mask
 	tableTopBinary = 255 - tableTopBinary; // invert mask
-	//cv::imshow("trash", tableTop);  // Show the bin mask of all objects that are on the table							// Debug
+	//cv::imshow("trash", tableTopBinary);  // Show the bin mask of all objects that are on the table							// Debug
 
 	// find the edges of all object on top of the field
 	std::vector<std::vector<cv::Point>> contours;
@@ -65,6 +72,13 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 	for (auto cardEdgeItr = contours.begin(); cardEdgeItr != contours.end(); ++cardEdgeItr)
 	{
 		const cv::Rect ROI = cv::boundingRect(*cardEdgeItr) + boundingTableRect.tl();
+		//cv::rectangle(scene, ROI, CV_RGB(0, 0, 255));																	// Debug
+
+		if (ROI.area() > _biggestBox.area())
+		{
+			// For omitting cards under player's hand from timing out and being forgotten
+			_biggestBox = ROI;
+		}
 
 		// eliminate noise
 		if (ROI.area() > MIN_AREA_ELIMINATION_THRESHOLD)
@@ -73,14 +87,22 @@ std::vector<TableCard> CardFinder::findAllCards(cv::Mat & scene)
 		}
 	}
 
+	// Debug, draw rectangles of memory cards
+	for (auto MemC_itr = _cardMemory.cbegin(); MemC_itr != _cardMemory.cend(); ++MemC_itr)
+	{
+		// full cards are megenta, all other cards are yellow
+		outlineRotatedRectangle(scene, MemC_itr->getMinimumBoundingRect(), CV_RGB(255, 255, 0));
+	}
+
 	// Draw rectangles around identified Magic cards
 	for (auto MC_itr = _foundCards.cbegin(); MC_itr != _foundCards.cend(); ++MC_itr)
 	{
-		outlineRotatedRectangle(scene, MC_itr->getMinimumBoundingRect());
+		// full cards are megenta, all other cards are yellow
+		outlineRotatedRectangle(scene, MC_itr->getMinimumBoundingRect(), (MC_itr->getCardVisibility() == TableCard::Visible ? CV_RGB(255, 0, 255) : CV_RGB(0, 255, 255)));
 	}
 	
-	//return cardROIsInScene;
-	return _foundCards;
+	evaluateCardsColors(_foundCards);
+	return &_foundCards;
 }
 
 
@@ -92,7 +114,10 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 	// threshold away anything that is not dark black
 	cv::Mat bwScene;
 	cv::cvtColor(ROI, bwScene, CV_BGR2GRAY);  // OR: Now filter the black regions by filtering the HSV Range V- 100 to 255. The result will look like this.
-	cv::threshold(bwScene, bwScene, 42, 255, CV_THRESH_BINARY_INV);// | CV_THRESH_OTSU); // was 42
+	//const double meanSceneChroma = cv::mean(bwScene)[0];
+	//const int borderThreshold = static_cast<int>(meanSceneChroma * 0.2) + 30; // was 0.165  57 for the red card
+	cv::threshold(bwScene, bwScene, 80, 255, CV_THRESH_BINARY_INV); // | CV_THRESH_OTSU); // was 42 // 70 for mid day shots
+	//cv::Canny(bwScene, bwScene, 20, 50);
 	
 	// reduce noise with erosion
 	cv::erode(bwScene, bwScene, cv::Mat());
@@ -127,12 +152,13 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 	}
 
 	// Now that only lvl1 contours remain...
+	bool isFirstContour = true;
 	while (!contours.empty()) // While there are still contours to process
 	{
 		//If there is only ONE contour; this is a single card
 		//If there is more than one contour; find the contour that is most rectangular: that is the most faceing card
 		// - note: we're going to assume that the contour with the biggest area is probably a card
-
+	
 		// Find the biggest (area) remaining contour
 		double biggestAreaYet = 0.0;
 		auto biggestContourFound = contours.begin();
@@ -145,15 +171,28 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 				biggestContourFound = contour_itr;
 			}
 		}
-
+	
 		// Find minimum bounding rectangle
 		const cv::RotatedRect cardBoundingBox = cv::minAreaRect(*biggestContourFound);
 		std::vector<cv::Point2f> bbContours(4); // number of points in a rectangle
 		cardBoundingBox.points(&bbContours.front());
-
+	
+		// Determine if it is a full card or is partially blocked
+		/// TODO: Explore if have time
+		/*
+		double epsilon = cv::arcLength(*biggestContourFound, true) * 0.1;
+		cv::approxPolyDP(*biggestContourFound, *biggestContourFound, epsilon, true);
+		const bool isFullCard = cv::isContourConvex(*biggestContourFound);
+		*/
+	
 		// remove all contours that are completely enclosed by the bounding rectangle enclosing the largest contour, including the largest contour
 		// this will remove noise that is part of a card
 		contours.erase(biggestContourFound); // remove this now because once we remove one object this iterator is invalidated.
+		if (biggestAreaYet < MIN_AREA_ELIMINATION_THRESHOLD)
+		{
+			continue;
+		}
+	
 		auto smallContour_itr = contours.begin();
 		while ( smallContour_itr != contours.end())
 		{
@@ -168,10 +207,11 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 				++smallContour_itr;
 			}
 		}
-
+	
 		// For each card face found; copy, rotate, and add black border. Then ship it to TableCard class
-		runningList.emplace_back(extractCardImage(originalImage, cardBoundingBox, ROIOffset, tableBB));
-
+		runningList.emplace_back(extractCardImage(originalImage, cardBoundingBox, ROIOffset, tableBB, isFirstContour));
+		isFirstContour = false;
+	
 		// Blackout where card used to be for later processing on same region
 		// OPTIMIZATION: Do not have to do if no contours remain at this point
 		blackoutRotatedRectangle(originalImage, cardBoundingBox);
@@ -198,7 +238,7 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 }
 
 
-TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::RotatedRect boundingRect, const cv::Point worldPosition, const cv::Rect & tableBB) const
+TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::RotatedRect boundingRect, const cv::Point worldPosition, const cv::Rect & tableBB, const bool isFullCard) const
 {
 	cv::Mat rotatedUpright;
 
@@ -239,7 +279,8 @@ TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::Rota
 	// return 
 	const cv::Point2f newCenter(boundingRect.center.x + static_cast<float>(worldPosition.x), boundingRect.center.y + static_cast<float>(worldPosition.y));
 	const cv::RotatedRect cardBoundingBox(newCenter, boundingRect.size, boundingRect.angle);
-	return TableCard(cardBoundingBox, croppedToFit);
+	const TableCard::VisibilityState cardVisibility = (isFullCard ? TableCard::Visible : TableCard::PartialBlockedUnidentified);
+	return TableCard(cardBoundingBox, croppedToFit, cardVisibility);
 }
 
 
@@ -260,14 +301,14 @@ bool CardFinder::isContourConsumedByAnother(const std::vector<cv::Point> contour
 }
 
 
-void CardFinder::outlineRotatedRectangle(cv::Mat & scene, const cv::RotatedRect RR) const
+void CardFinder::outlineRotatedRectangle(cv::Mat & scene, const cv::RotatedRect RR, const cv::Scalar & color) const
 {
 	const int pointsInARectangle = 4;
 	cv::Point2f vertices[pointsInARectangle];
 	RR.points(vertices);
 	for (int index = 0; index < pointsInARectangle; ++index)
 	{
-		cv::line(scene, vertices[index], vertices[(index + 1) % pointsInARectangle], CV_RGB(255, 0, 0));
+		cv::line(scene, vertices[index], vertices[(index + 1) % pointsInARectangle], color);
 	}
 }
 
@@ -301,7 +342,7 @@ cv::Mat CardFinder::findPlayField(const cv::Mat & scene) const
 
 	cv::Mat backgroundMask = cv::Mat::zeros(scene.rows + 2, scene.cols + 2, CV_8UC1);
 	cv::Point centerPoint((backgroundMask.cols / 2) + 1, (backgroundMask.rows / 2) + 1);
-	cv::floodFill(_channels[1], backgroundMask, centerPoint, CV_RGB(UCHAR_MAX, UCHAR_MAX, UCHAR_MAX), NULL, cv::Scalar(5.0), cv::Scalar(5.0), 4 | CV_FLOODFILL_MASK_ONLY | (255 << 8));
+	cv::floodFill(_channels[1], backgroundMask, centerPoint, CV_RGB(UCHAR_MAX, UCHAR_MAX, UCHAR_MAX), NULL, cv::Scalar(4.0), cv::Scalar(3.0), 4 | CV_FLOODFILL_MASK_ONLY | (255 << 8));
 
 	// Take out the extra pixel boundrey floodfill needed.
 	backgroundMask = backgroundMask(cv::Rect(1, 1, scene.cols, scene.rows));
@@ -319,4 +360,187 @@ cv::Mat CardFinder::findPlayField(const cv::Mat & scene) const
 	//cv::imshow("background scene", backgroundMask);
 
 	return backgroundMask;
+}
+
+
+// Partial card finder functions try 1
+void CardFinder::rememberNewCards()
+{
+	for (auto seenCards_itr = _foundCards.begin(); seenCards_itr != _foundCards.end(); ++seenCards_itr)
+	{
+		if ((seenCards_itr->getCardVisibility() == TableCard::Visible) && (!recallCard(*seenCards_itr)))
+		{
+			// New card, remember it
+			_cardMemory.push_back(*seenCards_itr);
+		}
+	}
+}
+
+
+void CardFinder::forgetOldCards()
+{
+	const double timeToForgetThreshold = 8.0; // was 8.0
+	auto memoryCards_itr = _cardMemory.begin();
+	while ( memoryCards_itr != _cardMemory.end() )
+	{
+		/*
+		if (_biggestBox.contains(memoryCards_itr->getMinimumBoundingRect().center))
+		{
+			// if the card is contained under the biggest box, then it should not be forgotten yet since it's obstructed by the payer's hand
+			// If the biggest box is not the player's hand, then those cards should not be forgotten anyways.
+			// hack fix though, should use temporal data when have time
+			memoryCards_itr->resetTimedReferenceCheck();
+			++memoryCards_itr;
+		}
+		else // let it be forgotten if it times out
+		{
+		*/
+			if (memoryCards_itr->checkIfXSecondsSinceLastReference(timeToForgetThreshold))
+			{
+				memoryCards_itr = _cardMemory.erase(memoryCards_itr);
+				// I don't care if this skips a card, it'll get it on the next pass.
+			}
+			else
+			{
+				++memoryCards_itr;
+			}
+		//}
+	}
+}
+
+
+bool CardFinder::recallCard(const TableCard& cardToRecall)
+{
+	// Go through all of the remembered cards and see if this card exists
+	for (auto recallCard_itr = _cardMemory.begin(); recallCard_itr != _cardMemory.end(); ++recallCard_itr)
+	{
+		if (recallCard_itr->isProbablySameTableCard(cardToRecall))
+		{
+			recallCard_itr->resetTimedReferenceCheck();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+void CardFinder::reevaluateMemoryCards()
+{
+	for (auto memoryCard_itr = _cardMemory.begin(); memoryCard_itr != _cardMemory.end(); ++memoryCard_itr)
+	{
+		const CardDetails::FrameColor descernedFrameColor = _cdb_ptr->getLiveCardColor(memoryCard_itr->getMagicCard());
+		memoryCard_itr->setCardFrameColor(descernedFrameColor);
+	}
+}
+
+
+void CardFinder::evaluateCardsColors(std::vector<TableCard> & cards)
+{
+	for (auto tableCard_itr = cards.begin(); tableCard_itr != cards.end(); ++tableCard_itr)
+	{
+		const CardDetails::FrameColor descernedFrameColor = _cdb_ptr->getLiveCardColor(tableCard_itr->getMagicCard());
+		tableCard_itr->setCardFrameColor(descernedFrameColor);
+	}
+}
+
+
+// Try 3 for the function I hate
+void CardFinder::discernPartialCards()
+{
+	// Step 1) split found card list into visible cards and partial cards
+	// Step 2) use found visible cards to make list of potential cards from memory (by excluding visible cards)
+	// step 3) For each partialUnidentified card:
+	/// Get sublist of potential cards by matching by color
+	/// rank each potential card by position to last known location?
+	/// Keep list of all potential cards for learning?
+
+	std::vector<int> potentialCardIndicies;
+	//for (auto ptrMaker_itr = _cardMemory.begin(); ptrMaker_itr != _cardMemory.end(); ++ptrMaker_itr)
+	for (int index = 0; index < _cardMemory.size(); index++)
+	{
+		_cardMemory[index].hasBeenIdentified = false; // reset has been identified
+		potentialCardIndicies.push_back(index);
+	}
+
+	// step 1 & 2
+	//std::vector<TableCard> potentialCards = _cardMemory;
+	// need to remove cards from the old list that are accounted for
+	for (auto foundCard_itr = _foundCards.begin(); foundCard_itr != _foundCards.end(); ++foundCard_itr)
+	{
+		// for each visible car on the new list, delete that card from the old list
+		if (foundCard_itr->getCardVisibility() == TableCard::Visible)
+		{
+			//std::remove_if(potentialCards.begin(), potentialCards.end(), [foundCard_itr](TableCard pot_tableCard) { return foundCard_itr->isProbablySameTableCard(pot_tableCard); });
+			auto indexRemover_itr = potentialCardIndicies.begin();
+			while (indexRemover_itr != potentialCardIndicies.end())
+			{
+				if (foundCard_itr->isProbablySameTableCard(_cardMemory[(*indexRemover_itr)]))
+				{
+					_cardMemory[(*indexRemover_itr)].hasBeenIdentified = true;
+					indexRemover_itr = potentialCardIndicies.erase(indexRemover_itr);
+				}
+				else
+				{
+					++indexRemover_itr;
+				}
+			}
+		}
+	}
+
+	// step 3
+	for (auto foundCardUnknown_itr = _foundCards.begin(); foundCardUnknown_itr != _foundCards.end(); ++foundCardUnknown_itr)
+	{
+		if (foundCardUnknown_itr->getCardVisibility() == TableCard::PartialBlockedUnidentified)
+		{
+			// Go through all of the remembered cards and see if this card exists
+			for (auto recallCard_itr = _cardMemory.begin(); recallCard_itr != _cardMemory.end(); ++recallCard_itr)
+			{
+				if (recallCard_itr->getCardVisibility() == TableCard::PartialBlocked && (recallCard_itr->hasBeenIdentified == false) && recallCard_itr->isProbablySameTableCard(*foundCardUnknown_itr))
+				{
+					recallCard_itr->resetTimedReferenceCheck();
+					foundCardUnknown_itr->setToAssumedCard(*recallCard_itr);
+					recallCard_itr->hasBeenIdentified = true;
+					break; // bounce out
+				}
+			}
+		}
+	}
+
+	for (auto foundCardUnknown_itr = _foundCards.begin(); foundCardUnknown_itr != _foundCards.end(); ++foundCardUnknown_itr)
+	{
+		if (foundCardUnknown_itr->getCardVisibility() == TableCard::PartialBlockedUnidentified)
+		{
+			//////  Doesn't have a partial match yet, let's find it.
+			std::vector<int> potentialColorMatchIndicies;
+			for (auto colorMatcher_itr = potentialCardIndicies.begin(); colorMatcher_itr != potentialCardIndicies.end(); ++colorMatcher_itr)
+			{
+				if (foundCardUnknown_itr->getCardFrameColor() == _cardMemory[(*colorMatcher_itr)].getCardFrameColor() && (_cardMemory[(*colorMatcher_itr)].hasBeenIdentified == false))
+				{
+					potentialColorMatchIndicies.push_back(*colorMatcher_itr);
+				}
+			}
+			//std::copy_if(potentialCards.begin(), potentialCards.end(), potentialColorMatches.begin(), [foundCardUnknown_itr](TableCard pot_tableCard) { return foundCardUnknown_itr->getCardFrameColor() == pot_tableCard.getCardFrameColor(); });
+
+			int bestMatch_index = -1;
+			double closestDistance = DBL_MAX;
+			// TODO: could add weight to already partially blocked cards? Probably not
+			for (auto potentialCards_itr = potentialColorMatchIndicies.begin(); potentialCards_itr != potentialColorMatchIndicies.end(); ++potentialCards_itr)
+			{
+				double newDistance = _cardMemory[(*potentialCards_itr)].distanceFrom(*foundCardUnknown_itr);
+				if (newDistance < closestDistance)
+				{
+					closestDistance = newDistance;
+					bestMatch_index = *potentialCards_itr;
+				}
+			}
+
+			if (bestMatch_index != -1)
+			{
+				foundCardUnknown_itr->setToAssumedCard(_cardMemory[bestMatch_index]);
+				_cardMemory[bestMatch_index] = *foundCardUnknown_itr;
+				_cardMemory[bestMatch_index].hasBeenIdentified = true;
+			}
+		}
+	}
 }

@@ -76,6 +76,23 @@ void MagicEyeGUI::setResultCardImage(const cv::Mat & image, const int position)
 }
 
 
+int MagicEyeGUI::returnResultSelectionIndex(const cv::Point & clickCoord) const
+{
+	int currentIndex = 0;
+	for (auto resultsBB_itr = _resultCardsROIBounds.cbegin(); resultsBB_itr != _resultCardsROIBounds.cend(); ++resultsBB_itr)
+	{
+		if (resultsBB_itr->contains(clickCoord))
+		{
+			return currentIndex;
+		}
+
+		++currentIndex;
+	}
+
+	return -1;
+}
+
+
 cv::Mat MagicEyeGUI::scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const
 {
 	// TODO: delete?
