@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CARD_FINDER_H
+#define CARD_FINDER_H
+
 #include <opencv2/core/core.hpp>
 #include <vector>
 #include "TableCard.h"
@@ -38,3 +40,4 @@ private:
 	void evaluateCardsColors(std::vector<TableCard> & cards);
 };
 
+#endif // CARD_FINDER_H

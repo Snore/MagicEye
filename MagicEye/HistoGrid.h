@@ -1,4 +1,6 @@
-#pragma once
+#ifndef HISTO_GRID_H
+#define HISTO_GRID_H
+
 #include <opencv2/core/core.hpp>
 #include <vector>
 
@@ -25,3 +27,4 @@ private:
 	cv::Mat calcSubHistogram(cv::Mat & image);
 };
 
+#endif // HISTO_GRID_H

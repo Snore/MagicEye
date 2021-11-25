@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CARD_DATABASE_H
+#define CARD_DATABASE_H
+
 #include <vector>
 #include "MagicCard.h"
 
@@ -71,3 +73,4 @@ private:
 	double calcDeltaE_noChroma(const cv::Scalar colorPointOne, const cv::Scalar colorPointTwo) const;
 };
 
+#endif // CARD_DATABASE_H

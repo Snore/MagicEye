@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CARD_DETAILS_H
+#define CARD_DETAILS_H
+
 #include <string>
 #include <unordered_map>
 
@@ -387,3 +389,5 @@ namespace CardDetails
 	{ WWK, "WWK" },
 	{ ZEN, "ZEN" } });
 }
+
+#endif // CARD_DETAILS_H

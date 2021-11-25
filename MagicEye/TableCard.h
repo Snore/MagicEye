@@ -1,4 +1,6 @@
-#pragma once
+#ifndef TABLE_CARD_H
+#define TABLE_CARD_H
+
 #include <opencv2/core/core.hpp>
 #include <memory>
 #include <chrono>
@@ -50,3 +52,4 @@ private:
 	void makeRightsideUp(cv::Mat & cardImage) const;
 };
 
+#endif // TABLE_CARD_H

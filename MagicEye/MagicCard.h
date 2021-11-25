@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MAGIC_CARD_H
+#define MAGIC_CARD_H
+
 #include <opencv2/core/core.hpp>
 #include <string>
 
@@ -76,3 +78,4 @@ private:
 	void analyzeFeatures();
 };
 
+#endif // MAGIC_CARD_H

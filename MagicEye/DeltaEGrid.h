@@ -1,4 +1,6 @@
-#pragma once
+#ifndef DELTA_E_GRID_H
+#define DELTA_E_GRID_H
+
 #include <opencv2/core/core.hpp>
 #include <vector>
 
@@ -24,3 +26,4 @@ private:
 	double calcDeltaE(const cv::Scalar colorPointOne, const cv::Scalar colorPointTwo) const;
 };
 
+#endif // DELTA_E_GRID_H
