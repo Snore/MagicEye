@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MAGIC_EYE_GUI_H
+#define MAGIC_EYE_GUI_H
+
 #include <opencv2/core/core.hpp>
 #include <opencv2\highgui.hpp>
 #include <vector>
@@ -51,3 +53,4 @@ private:
 	cv::Mat scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const;
 };
 
+#endif // MAGIC_EYE_GUI_H
