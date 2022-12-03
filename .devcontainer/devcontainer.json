@@ -1,5 +1,5 @@
 {
-   "name": "MagicEye-devcontainer",
+   "name": "MagicEye",
    "build":
    {
       "dockerfile": "Dockerfile"
@@ -19,5 +19,7 @@
          "version": "latest"
       }
    },
+   "extensions": ["ms-vscode.cpptools-extension-pack",
+                  "cschlosser.doxdocgen"],
    "remoteUser": "vscode"
 }

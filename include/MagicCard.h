@@ -4,7 +4,7 @@
 #include <opencv2/core/core.hpp>
 #include <string>
 
-#include "json\json.h"
+#include "json.h"
 #include "CardDetails.h"
 
 // testing

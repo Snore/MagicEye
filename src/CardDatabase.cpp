@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CardDatabase.h"
-#include "json\json.h"
+#include "json.h"
 
 #include <fstream>
 #include <algorithm>
