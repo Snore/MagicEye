@@ -1,0 +1,23 @@
+{
+   "name": "MagicEye-devcontainer",
+   "build":
+   {
+      "dockerfile": "Dockerfile"
+   },
+   "features": 
+   {
+      "ghcr.io/guiyomh/features/vim:0":
+      {
+         "version": "latest"
+      },
+      "ghcr.io/devcontainers/features/git:1":
+      {
+         "version": "latest"
+      },
+      "ghcr.io/devcontainers/features/git-lfs:1":
+      {
+         "version": "latest"
+      }
+   },
+   "remoteUser": "vscode"
+}
