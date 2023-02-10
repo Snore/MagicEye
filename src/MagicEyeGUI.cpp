@@ -1,5 +1,5 @@
 #include "MagicEyeGUI.h"
-#include <opencv2\imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 
 
@@ -9,7 +9,7 @@ MagicEyeGUI::MagicEyeGUI(const std::string windowName)
 	_window = cv::Mat::zeros(WIN_HEIGHT, WIN_WIDTH, CV_8UC3);
 	initializeROIs();
 
-	cv::namedWindow(_windowName, CV_WINDOW_AUTOSIZE);
+	cv::namedWindow(_windowName, cv::WINDOW_AUTOSIZE);
 }
 
 
@@ -33,7 +33,7 @@ void MagicEyeGUI::setMainDisplayFrame(const cv::Mat & image)
 		//then
 
 		// Assuming we always shrink
-		cv::resize(image, _mainDisplayROI, _mainDisplayROI.size(), 0.0, 0.0, CV_INTER_AREA);
+		cv::resize(image, _mainDisplayROI, _mainDisplayROI.size(), 0.0, 0.0, cv::INTER_AREA);
 
 		// else
 		// could figure it out each time, or can assume dest is always wider than source image
@@ -50,7 +50,7 @@ void MagicEyeGUI::setSecondaryDisplayFrame(const cv::Mat & image)
 	if (_secondaryDisplayROI.size() != image.size())
 	{
 		// Assuming we always Grow
-		cv::resize(image, _secondaryDisplayROI, _secondaryDisplayROI.size(), 0.0, 0.0, CV_INTER_LINEAR);
+		cv::resize(image, _secondaryDisplayROI, _secondaryDisplayROI.size(), 0.0, 0.0, cv::INTER_LINEAR);
 	}
 	else
 	{
@@ -67,7 +67,7 @@ void MagicEyeGUI::setResultCardImage(const cv::Mat & image, const int position)
 	if (_resultCardsROI[position].size() != image.size())
 	{
 		// Assuming we always shrink
-		cv::resize(image, _resultCardsROI[position], _resultCardsROI[position].size(), 0.0, 0.0, CV_INTER_AREA);
+		cv::resize(image, _resultCardsROI[position], _resultCardsROI[position].size(), 0.0, 0.0, cv::INTER_AREA);
 	}
 	else
 	{

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "HistoGrid.h"
-#include <opencv2\imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 
 HistoGrid::HistoGrid()
@@ -51,17 +51,17 @@ double HistoGrid::compare(const HistoGrid & gridOne, const HistoGrid & gridTwo)
 	const size_t numOfCells = gridOne._histGridCells.size();
 	for (size_t index = 0; index < numOfCells; ++index)
 	{
-		distance += cv::compareHist(gridOne._histGridCells[index], gridTwo._histGridCells[index], CV_COMP_CHISQR);
+		distance += cv::compareHist(gridOne._histGridCells[index], gridTwo._histGridCells[index], cv::HISTCMP_CHISQR);
 	}
 
 	return distance;
 }
 
 
-cv::Mat HistoGrid::calcSubHistogram(cv::Mat & image)
+cv::Mat HistoGrid::calcSubHistogram(const cv::Mat & image)
 {
 	cv::Mat imageHLS;
-	cv::cvtColor(image, imageHLS, CV_BGR2HLS);
+	cv::cvtColor(image, imageHLS, cv::COLOR_BGR2HLS);
 
 	const int histSize[] = { HUE_BINS, SAT_BINS };
 	const float hranges[] = { 0, 180 };

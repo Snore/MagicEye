@@ -25,4 +25,4 @@ add_executable( ${PROJECT_NAME} ${SRC_FILES} )
 target_include_directories( ${PROJECT_NAME} PRIVATE include
                                             PRIVATE ${json_INCLUDE_DIRS}
                                             PRIVATE ${OpenCV_INCLUDE_DIRS} )
-target_link_libraries( ${PROJECT_NAME} PRIVATE ${OpenCV_LIBRARIES} )
+target_link_libraries( ${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} )
