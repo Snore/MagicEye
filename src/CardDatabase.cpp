@@ -5,8 +5,8 @@
 #include <fstream>
 #include <algorithm>
 #include <cfloat>
-#include <opencv2\imgproc.hpp>
-#include <opencv2\highgui.hpp> // DEBUG
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp> // DEBUG
 #include <iostream> // DEBUG
 
 
@@ -29,7 +29,7 @@ void drawHistogram(cv::Mat & histogram, const int sbins, const int hbins, std::s
 			rectangle(histImg, cv::Point(h*scale, s*scale),
 				cv::Point((h + 1)*scale - 1, (s + 1)*scale - 1),
 				cv::Scalar::all(intensity),
-				CV_FILLED);
+				cv::FILLED);
 		}
 	}
 	cv::imshow(windowName, histImg);
@@ -646,7 +646,7 @@ double CardDatabase::calcDeltaE(const cv::Scalar colorPointOne, const cv::Scalar
 
 CardDetails::FrameColor CardDatabase::getLiveCardColor(const MagicCard* card) const
 {
-	const int COMP_HIST_METHOD = CV_COMP_CHISQR;
+	const int COMP_HIST_METHOD = cv::HISTCMP_CHISQR;
 	CardDetails::FrameColor bestMatchingColor = CardDetails::Unsure;
 	double bestMatchingDistance = DBL_MAX;
 

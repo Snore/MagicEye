@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "MagicCard.h"
-#include <opencv2\highgui.hpp>
-#include <opencv2\imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <iostream>
 #include <climits>
 #include <sstream>
@@ -136,7 +136,7 @@ cv::Mat MagicCard::loadCardImage() const
 		//cv::Mat cardImage = readImageFromImageFile(getFileFromPath(_imageFilePath));
 		cv::Mat cardImage = readImageFromImageFile(_imageFilePath);
 #else
-		cv::Mat cardImage = cv::imread(_imageFilePath, CV_LOAD_IMAGE_COLOR);
+		cv::Mat cardImage = cv::imread(_imageFilePath, cv::IMREAD_COLOR);
 #endif // UWP_VERSION
 		if (!cardImage.data)
 		{
@@ -219,8 +219,8 @@ cv::Mat MagicCard::getFrameHistogram() const
 {
 	cv::Mat cardHLS, imageGray, imageColor;
 	imageColor = getBorderlessCardImage();
-	cv::cvtColor(imageColor, imageGray, CV_BGR2GRAY);
-	cv::cvtColor(imageColor, cardHLS, CV_BGR2HLS);
+	cv::cvtColor(imageColor, imageGray, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(imageColor, cardHLS, cv::COLOR_BGR2HLS);
 
 	//int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins };
 	int histSize[] = { CardMeasurements::HueBins, CardMeasurements::SaturationBins, CardMeasurements::ValueBins };
@@ -237,7 +237,7 @@ cv::Mat MagicCard::getFrameHistogram() const
 	// the filter should set all the pixels in the shadow to exactly 0; should be rare that this pixel color exists in real life
 	cv::Mat mask;
 	cv::Mat partialShadowMask;
-	cv::threshold(imageGray, partialShadowMask, 0.0, 255, CV_THRESH_BINARY);
+	cv::threshold(imageGray, partialShadowMask, 0.0, 255, cv::THRESH_BINARY);
 	mask = cv::Mat(partialShadowMask.size(), CV_8UC1);
 	cv::bitwise_and(getFrameOnlyMask(), partialShadowMask, mask);
 
@@ -255,15 +255,15 @@ cv::Scalar MagicCard::getFrameMeanColor_CIELAB() const
 {
 	cv::Mat imageLAB, imageGray, imageColor;
 	imageColor = getBorderlessCardImage();
-	cv::cvtColor(imageColor, imageGray, CV_BGR2GRAY);
-	cv::cvtColor(imageColor, imageLAB, CV_BGR2Lab);
+	cv::cvtColor(imageColor, imageGray, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(imageColor, imageLAB, cv::COLOR_BGR2Lab);
 	///cv::cvtColor(getBorderlessCardImage(), imageLAB, CV_BGR2Luv);
 
 	// Filter out partial card shadows
 	// the filter should set all the pixels in the shadow to exactly 0; should be rare that this pixel color exists in real life
 	cv::Mat mask;
 	cv::Mat partialShadowMask;
-	cv::threshold(imageGray, partialShadowMask, 0.0, 255, CV_THRESH_BINARY);
+	cv::threshold(imageGray, partialShadowMask, 0.0, 255, cv::THRESH_BINARY);
 	mask = cv::Mat(partialShadowMask.size(), CV_8UC1);
 	cv::bitwise_and(getFrameOnlyMask(), partialShadowMask, mask);
 
@@ -361,13 +361,13 @@ std::string MagicCard::FrameColorToString(const CardDetails::FrameColor fcolor)
 cv::Rect MagicCard::findBorderlessROI(cv::Mat & wholeCardImage) const
 {
 	cv::Mat card = wholeCardImage.clone();
-	cv::cvtColor(card, card, CV_BGR2GRAY);
-	cv::threshold(card, card, 40, UCHAR_MAX, CV_THRESH_BINARY);
+	cv::cvtColor(card, card, cv::COLOR_BGR2GRAY);
+	cv::threshold(card, card, 40, UCHAR_MAX, cv::THRESH_BINARY);
 	//cv::imshow("thresh", card);  // DEBUG
 
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours(card, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+	cv::findContours(card, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	// Draw contours // DEBUG
 	/*
@@ -401,8 +401,8 @@ cv::Mat MagicCard::getFrameOnlyMask() const
 	//cv::rectangle(frameOnlyMask, _textROI, CV_RGB(1, 1, 1), CV_FILLED);
 
 	cv::Mat frameOnlyMask = cv::Mat::ones(_borderlessROI.size(), CV_8UC1);
-	cv::rectangle(frameOnlyMask, _artROI, CV_RGB(0, 0, 0), CV_FILLED);
-	cv::rectangle(frameOnlyMask, _textROI, CV_RGB(0, 0, 0), CV_FILLED);
+	cv::rectangle(frameOnlyMask, _artROI, CV_RGB(0, 0, 0), cv::FILLED);
+	cv::rectangle(frameOnlyMask, _textROI, CV_RGB(0, 0, 0), cv::FILLED);
 	return frameOnlyMask;
 }
 
