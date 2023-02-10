@@ -1,6 +1,6 @@
 #include "CardFinder.h"
-#include <opencv2\imgproc.hpp>
-#include <opencv2\highgui.hpp> // DEBUG
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp> // DEBUG
 #include <iostream> // DEBUG
 #include <climits>
 #include <algorithm>
@@ -66,7 +66,7 @@ std::vector<TableCard>* CardFinder::findAllCards(cv::Mat & scene)
 
 	// find the edges of all object on top of the field
 	std::vector<std::vector<cv::Point>> contours;
-	cv::findContours(tableTopBinary.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+	cv::findContours(tableTopBinary.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	// encase all of the unkown object edges in bounding rectangles
 	for (auto cardEdgeItr = contours.begin(); cardEdgeItr != contours.end(); ++cardEdgeItr)
@@ -113,10 +113,10 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 
 	// threshold away anything that is not dark black
 	cv::Mat bwScene;
-	cv::cvtColor(ROI, bwScene, CV_BGR2GRAY);  // OR: Now filter the black regions by filtering the HSV Range V- 100 to 255. The result will look like this.
+	cv::cvtColor(ROI, bwScene, cv::COLOR_BGR2GRAY);  // OR: Now filter the black regions by filtering the HSV Range V- 100 to 255. The result will look like this.
 	//const double meanSceneChroma = cv::mean(bwScene)[0];
 	//const int borderThreshold = static_cast<int>(meanSceneChroma * 0.2) + 30; // was 0.165  57 for the red card
-	cv::threshold(bwScene, bwScene, 80, 255, CV_THRESH_BINARY_INV); // | CV_THRESH_OTSU); // was 42 // 70 for mid day shots
+	cv::threshold(bwScene, bwScene, 80, 255, cv::THRESH_BINARY_INV); // | CV_THRESH_OTSU); // was 42 // 70 for mid day shots
 	//cv::Canny(bwScene, bwScene, 20, 50);
 	
 	// reduce noise with erosion
@@ -128,7 +128,7 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 	// find edges
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours(bwScene.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+	cv::findContours(bwScene.clone(), contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
 	// Only process the contours at level 1
 	// Those are the ones inside the outer most contours and represent the card faces without the black borders.
@@ -268,7 +268,7 @@ TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::Rota
 	rotationMat.at<double>(0, 2) += canvasSize.width / 2.0 - boundingRect.center.x;
 	rotationMat.at<double>(1, 2) += canvasSize.height / 2.0 - boundingRect.center.y;
 
-	cv::warpAffine(fromScene, rotatedUpright, rotationMat, canvasSize, CV_INTER_CUBIC);
+	cv::warpAffine(fromScene, rotatedUpright, rotationMat, canvasSize, cv::INTER_CUBIC);
 
 	// Need to crop out extra information after rotation
 	cv::Mat croppedToFit;
@@ -332,7 +332,7 @@ cv::Mat CardFinder::findPlayField(const cv::Mat & scene) const
 	// Or, convert to CIELAB, then floodfill
 	// Or, once table corners are established. use those as floodfill seeds too? (not sure on this one)
 	cv::Mat hsvScene;
-	cv::cvtColor(scene, hsvScene, CV_BGR2HSV);
+	cv::cvtColor(scene, hsvScene, cv::COLOR_BGR2HSV);
 
 	std::vector<cv::Mat> _channels;
 	cv::split(hsvScene, _channels);
@@ -342,13 +342,13 @@ cv::Mat CardFinder::findPlayField(const cv::Mat & scene) const
 
 	cv::Mat backgroundMask = cv::Mat::zeros(scene.rows + 2, scene.cols + 2, CV_8UC1);
 	cv::Point centerPoint((backgroundMask.cols / 2) + 1, (backgroundMask.rows / 2) + 1);
-	cv::floodFill(_channels[1], backgroundMask, centerPoint, CV_RGB(UCHAR_MAX, UCHAR_MAX, UCHAR_MAX), NULL, cv::Scalar(4.0), cv::Scalar(3.0), 4 | CV_FLOODFILL_MASK_ONLY | (255 << 8));
+	cv::floodFill(_channels[1], backgroundMask, centerPoint, CV_RGB(UCHAR_MAX, UCHAR_MAX, UCHAR_MAX), NULL, cv::Scalar(4.0), cv::Scalar(3.0), 4 | cv::FLOODFILL_MASK_ONLY | (255 << 8));
 
 	// Take out the extra pixel boundrey floodfill needed.
 	backgroundMask = backgroundMask(cv::Rect(1, 1, scene.cols, scene.rows));
 
 	/// Why do I need this?  Does Floodfill do this?  Fix floodfill so it doesn't change my zero pixels
-	cv::threshold(backgroundMask, backgroundMask, 20, UCHAR_MAX, CV_THRESH_BINARY);
+	cv::threshold(backgroundMask, backgroundMask, 20, UCHAR_MAX, cv::THRESH_BINARY);
 
 	/// Idea: dilate -> erode to remove noise?
 	cv::dilate(backgroundMask, backgroundMask, cv::Mat());

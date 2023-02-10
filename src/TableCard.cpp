@@ -1,9 +1,9 @@
 #include "TableCard.h"
-#include <opencv2\imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 // Debug
 #include <sstream>
-#include <opencv2\highgui.hpp>
+#include <opencv2/highgui.hpp>
 
 
 
@@ -192,11 +192,11 @@ void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 	/// Could probably optimize with floodfill?
 	// cut out the black border
 	cv::Mat card = cardImage.clone();
-	cv::cvtColor(card, card, CV_BGR2GRAY);
-	cv::threshold(card, card, 40, UCHAR_MAX, CV_THRESH_BINARY);
+	cv::cvtColor(card, card, cv::COLOR_BGR2GRAY);
+	cv::threshold(card, card, 40, UCHAR_MAX, cv::THRESH_BINARY);
 
 	std::vector<std::vector<cv::Point>> contours;
-	cv::findContours(card, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+	cv::findContours(card, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	// Merge all contours points into one
 	std::vector<cv::Point> allPoints;
@@ -222,8 +222,8 @@ void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 	cv::Rect rightColumnROI = cv::Rect(rightColumn, 0, 1, cardAlone.rows);
 	cv::Mat leftColumnBW, rightColumnBW;
 
-	cv::cvtColor(cardAlone(leftColumnROI), leftColumnBW, CV_BGR2GRAY);
-	cv::cvtColor(cardAlone(rightColumnROI), rightColumnBW, CV_BGR2GRAY);
+	cv::cvtColor(cardAlone(leftColumnROI), leftColumnBW, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(cardAlone(rightColumnROI), rightColumnBW, cv::COLOR_BGR2GRAY);
 
 	// make ranges for upper and lower halves
 	const double rangePercent = 0.4;

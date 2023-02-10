@@ -1,6 +1,6 @@
 #include <opencv2/core/core.hpp>
-#include <opencv2\highgui.hpp>
-#include <opencv2\imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -12,14 +12,14 @@
 
 // Images we use often in the GUI
 const std::string MAIN_WINDOW_NAME = "Welcome to MagicEye";
-const cv::Mat NoGoodResults = cv::imread("Assets\\AllSets\\NoShow.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat WhiteFrameImage = cv::imread("Assets\\AllSets\\ZEN\\plains4.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat BlackFrameImage = cv::imread("Assets\\AllSets\\ZEN\\swamp2.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat RedFrameImage = cv::imread("Assets\\AllSets\\ZEN\\mountain3.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat BlueFrameImage = cv::imread("Assets\\AllSets\\ZEN\\island3.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat GreenFrameImage = cv::imread("Assets\\AllSets\\ZEN\\forest1.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat ColorlessFrameImage = cv::imread("Assets\\AllSets\\DST\\darksteel citadel.jpg", CV_LOAD_IMAGE_COLOR);
-const cv::Mat MultiColorFrameImage = cv::imread("Assets\\AllSets\\AVR\\cavern of souls.jpg", CV_LOAD_IMAGE_COLOR);
+const cv::Mat NoGoodResults = cv::imread("Assets\\AllSets\\NoShow.jpg", cv::IMREAD_COLOR);
+const cv::Mat WhiteFrameImage = cv::imread("Assets\\AllSets\\ZEN\\plains4.jpg", cv::IMREAD_COLOR);
+const cv::Mat BlackFrameImage = cv::imread("Assets\\AllSets\\ZEN\\swamp2.jpg", cv::IMREAD_COLOR);
+const cv::Mat RedFrameImage = cv::imread("Assets\\AllSets\\ZEN\\mountain3.jpg", cv::IMREAD_COLOR);
+const cv::Mat BlueFrameImage = cv::imread("Assets\\AllSets\\ZEN\\island3.jpg", cv::IMREAD_COLOR);
+const cv::Mat GreenFrameImage = cv::imread("Assets\\AllSets\\ZEN\\forest1.jpg", cv::IMREAD_COLOR);
+const cv::Mat ColorlessFrameImage = cv::imread("Assets\\AllSets\\DST\\darksteel citadel.jpg", cv::IMREAD_COLOR);
+const cv::Mat MultiColorFrameImage = cv::imread("Assets\\AllSets\\AVR\\cavern of souls.jpg", cv::IMREAD_COLOR);
 const cv::Mat clearResults = cv::Mat::zeros(NoGoodResults.size(), CV_8UC3);
 
 enum GUIState
@@ -65,7 +65,7 @@ void drawHistogram(cv::MatND & histogram, const int sbins, const int hbins)
 			rectangle(histImg, cv::Point(h*scale, s*scale),
 				cv::Point((h + 1)*scale - 1, (s + 1)*scale - 1),
 				cv::Scalar::all(intensity),
-				CV_FILLED);
+				cv::FILLED);
 		}
 	}
 	cv::imshow("H-S Histogram", histImg);
@@ -115,7 +115,7 @@ void compileMetrics()
 // Mouse click controls for the GUI
 void mouseEventCallback(int mouseEvent, int x, int y, int flags, void* userData)
 {
-	if (mouseEvent == CV_EVENT_LBUTTONDOWN)
+	if (mouseEvent == cv::EVENT_LBUTTONDOWN)
 	{
 		std::cout << "Mouse pointer X: " << x << " Y: " << y << "\n";
 
@@ -405,7 +405,7 @@ int main(int argc, char** argv)
 	}
 
 	/// Display
-	cv::namedWindow("Magic eye", CV_WINDOW_AUTOSIZE);
+	cv::namedWindow("Magic eye", cv::WINDOW_AUTOSIZE);
 	cv::setMouseCallback(MAIN_WINDOW_NAME, mouseEventCallback, NULL);
 	//cv::imshow("Magic eye", image);
 

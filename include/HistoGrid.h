@@ -24,7 +24,7 @@ private:
 	std::vector<cv::Mat> _histGridCells;
 
 	// functions
-	cv::Mat calcSubHistogram(cv::Mat & image);
+	cv::Mat calcSubHistogram(const cv::Mat & image);
 };
 
 #endif // HISTO_GRID_H

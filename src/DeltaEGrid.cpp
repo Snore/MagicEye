@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "DeltaEGrid.h"
-#include <opencv2\imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 
 DeltaEGrid::DeltaEGrid()
@@ -16,7 +16,7 @@ DeltaEGrid::DeltaEGrid(const cv::Mat image)
 	const cv::Size roiDimensions(ratioLengthSteps, ratioHeightSteps);
 
 	cv::Mat imageLAB;
-	cv::cvtColor(image, imageLAB, CV_BGR2Lab);
+	cv::cvtColor(image, imageLAB, cv::COLOR_BGR2Lab);
 
 	// Get image average
 	_averageImageColor = cv::mean(imageLAB); /// Does this work in LAB color space?  Or should it be done in BGR?
