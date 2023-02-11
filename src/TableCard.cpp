@@ -9,25 +9,25 @@
 
 TableCard::TableCard()
 	:
+	hasBeenIdentified(false),
 	_assumedCard_ptr(NULL),
 	_boundingBoxInScene(),
 	_cardFrameColor(CardDetails::Unsure),
 	_visibilityState(VisibilityState::Missing),
 	_lastReferenced(std::chrono::system_clock::now()),
-	_forceExpire(false),
-	hasBeenIdentified(false)
+	_forceExpire(false)
 {
 }
 
 
 TableCard::TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImage, const VisibilityState vstate)
 	:
+	hasBeenIdentified(false),
 	_boundingBoxInScene(boundingBox),
 	_cardFrameColor(CardDetails::Unsure),
 	_visibilityState(vstate),
 	_lastReferenced(std::chrono::system_clock::now()),
-	_forceExpire(false),
-	hasBeenIdentified(false)
+	_forceExpire(false)
 {
 	// add a black border
 	cv::Mat cardImageWithBorder;
@@ -44,13 +44,13 @@ TableCard::TableCard(const cv::RotatedRect boundingBox, const cv::Mat & cardImag
 
 TableCard::TableCard(const TableCard & obj)
 	:
+	hasBeenIdentified(obj.hasBeenIdentified),
 	_assumedCard_ptr(obj._assumedCard_ptr),
 	_boundingBoxInScene(obj._boundingBoxInScene),
 	_cardFrameColor(obj._cardFrameColor),
 	_visibilityState(obj._visibilityState),
 	_lastReferenced(obj._lastReferenced),
-	_forceExpire(obj._forceExpire),
-	hasBeenIdentified(obj.hasBeenIdentified)
+	_forceExpire(obj._forceExpire)
 {
 	// Everything else is covered
 }
@@ -82,8 +82,9 @@ MagicCard* TableCard::getMagicCard() const
 }
 
 
-bool TableCard::isPointInside(cv::Point point) const
+bool TableCard::isPointInside([[maybe_unused]] cv::Point point) const
 {
+	// TODO
 	return true;
 }
 
@@ -200,7 +201,7 @@ void TableCard::makeRightsideUp(cv::Mat & cardImage) const
 
 	// Merge all contours points into one
 	std::vector<cv::Point> allPoints;
-	for (int outer = 0; outer < contours.size(); ++outer)
+	for (std::size_t outer = 0; outer < contours.size(); ++outer)
 	{
 		for (std::vector<cv::Point>::iterator pointItr = contours[outer].begin(); pointItr != contours[outer].end(); ++pointItr)
 		{

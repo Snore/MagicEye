@@ -40,9 +40,15 @@ MagicCard::MagicCard(cv::Mat & cardImage)
 	_imageFilePath(""),
 	_set(CardDetails::ALA),
 	_type(CardDetails::Unidentified),
+	_ROIImage(cardImage.clone()),
 	_fcolor(CardDetails::Unsure),
 	_perceivedTextVerbosity(0.0),
-	_ROIImage(cardImage.clone())
+	_artHistoGrid(),
+	_artDeltaEGrid(),
+	_featurePoints(),
+	_artROI(),
+	_textROI(),
+	_borderlessROI()
 {
 	// Analyze card
 	locateCardRegions();
@@ -55,8 +61,15 @@ MagicCard::MagicCard(const std::string imagePath)
 	_imageFilePath(imagePath),
 	_set(CardDetails::ALA),
 	_type(CardDetails::Unidentified),
+	_ROIImage(),
 	_fcolor(CardDetails::Unsure),
-	_perceivedTextVerbosity(0.0)
+	_perceivedTextVerbosity(0.0),
+	_artHistoGrid(),
+	_artDeltaEGrid(),
+	_featurePoints(),
+	_artROI(),
+	_textROI(),
+	_borderlessROI()
 {
 	// Analyze card
 	locateCardRegions();
@@ -69,15 +82,17 @@ MagicCard::MagicCard(const std::string name, const std::string imagePath, const 
 	_imageFilePath(imagePath),
 	_set(set),
 	_type(type),
-	_fcolor(CardDetails::Unsure)
+	_fcolor(CardDetails::Unsure),
+	_perceivedTextVerbosity(0.0),
+	_artHistoGrid(),
+	_artDeltaEGrid(),
+	_featurePoints(),
+	_artROI(),
+	_textROI(),
+	_borderlessROI()
 {
 	// Analyze card
 	locateCardRegions();
-}
-
-
-MagicCard::~MagicCard()
-{
 }
 
 
@@ -188,7 +203,7 @@ void MagicCard::locateCardRegions()
 	const int cardWidth = _borderlessROI.width;
 	const double topRatio = 60.0 / 660.0;
 	const double leftRatio = 20.0 / 440.0;
-	const double bottomRatio = 290.0 / 660.0;
+	// const double bottomRatio = 290.0 / 660.0; // TOOD: Unused
 	const double cardArtWidthRatio = 420.0 / 460.0;
 	const double cardArtHeightRatio = 310.0 / 660.0;
 	cv::Point ulArtPoint(static_cast<int>(cardWidth * leftRatio), static_cast<int>(cardHeight * topRatio));
@@ -381,7 +396,7 @@ cv::Rect MagicCard::findBorderlessROI(cv::Mat & wholeCardImage) const
 
 	// Merge all contours points into one
 	std::vector<cv::Point> allPoints;
-	for (int outer = 0; outer < contours.size(); ++outer)
+	for (std::size_t outer = 0; outer < contours.size(); ++outer)
 	{
 		for (std::vector<cv::Point>::iterator pointItr = contours[outer].begin(); pointItr != contours[outer].end(); ++pointItr)
 		{
