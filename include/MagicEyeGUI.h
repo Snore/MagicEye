@@ -50,7 +50,7 @@ private:
 
 	// functions
 	void initializeROIs();
-	cv::Mat scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const;
+	//cv::Mat scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const;
 };
 
 #endif // MAGIC_EYE_GUI_H

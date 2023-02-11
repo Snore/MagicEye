@@ -113,7 +113,11 @@ void compileMetrics()
 }
 
 // Mouse click controls for the GUI
-void mouseEventCallback(int mouseEvent, int x, int y, int flags, void* userData)
+void mouseEventCallback(int mouseEvent, 
+						int x, 
+						int y, 
+						[[maybe_unused]] int flags, 
+						[[maybe_unused]] void* userData)
 {
 	if (mouseEvent == cv::EVENT_LBUTTONDOWN)
 	{
@@ -318,7 +322,8 @@ void mouseEventCallback(int mouseEvent, int x, int y, int flags, void* userData)
 }
 
 
-int main(int argc, char** argv)
+int main( [[maybe_unused]] int argc, 
+		  [[maybe_unused]] char** argv )
 {
 	/// Database / real loop
 	///CardDatabase cdb; TODO FOR DEMO ONLY
@@ -412,7 +417,7 @@ int main(int argc, char** argv)
 	//jumpXFrames(cap, 2850);
 	bool pause = false;
 	cv::Mat frame;
-	unsigned int frameNumber = 0; //4208 for multi cards and stacked cards // 1251 for beginning
+	//unsigned int frameNumber = 0; //4208 for multi cards and stacked cards // 1251 for beginning
 	while (true)
 	{
 		if (!pause)

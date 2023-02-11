@@ -26,3 +26,4 @@ target_include_directories( ${PROJECT_NAME} PRIVATE include
                                             PRIVATE ${json_INCLUDE_DIRS}
                                             PRIVATE ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries( ${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} )
+target_compile_options( ${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror )

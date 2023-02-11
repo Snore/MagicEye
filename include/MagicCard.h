@@ -25,7 +25,7 @@ public:
 	MagicCard(cv::Mat & cardImage);
 	MagicCard(const std::string imagePath);
 	MagicCard(const std::string name, const std::string imagePath, const CardDetails::CardSet set, const CardDetails::Type type);
-	~MagicCard();
+	~MagicCard() = default;
 
 	cv::Mat loadCardImage() const;
 	CardDetails::FrameColor getFrameColor() const;
