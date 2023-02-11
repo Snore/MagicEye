@@ -22,6 +22,8 @@ public:
 	TableCard(const TableCard & obj);
 	~TableCard();
 
+	TableCard& operator=(const TableCard& rhs) = default;
+
 	cv::Rect getBoundingRect() const;
 	cv::RotatedRect getMinimumBoundingRect() const;
 	MagicCard* getMagicCard() const;

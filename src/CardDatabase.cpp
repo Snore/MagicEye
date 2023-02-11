@@ -129,8 +129,8 @@ std::vector<MagicCard*> CardDatabase::returnMostAlike(MagicCard const * const ca
 	for (int superIndex = 0; superIndex < groupSize; ++superIndex)
 	{
 		double winningValue = matchesValues[0];
-		int winningIndex = 0;
-		for (int index = 1; index < matchesValues.size(); ++index)
+		std::size_t winningIndex = 0;
+		for (std::size_t index = 1; index < matchesValues.size(); ++index)
 		{
 			if (matchesValues[index] < winningValue)
 			{

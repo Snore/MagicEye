@@ -93,11 +93,11 @@ int MagicEyeGUI::returnResultSelectionIndex(const cv::Point & clickCoord) const
 }
 
 
-cv::Mat MagicEyeGUI::scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const
-{
-	// TODO: delete?
-	return cv::Mat::zeros(2, 2, CV_8UC3);
-}
+// cv::Mat MagicEyeGUI::scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const
+// {
+// 	// TODO: delete?
+// 	return cv::Mat::zeros(2, 2, CV_8UC3);
+// }
 
 
 void MagicEyeGUI::initializeROIs()

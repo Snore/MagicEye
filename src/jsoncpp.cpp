@@ -1413,11 +1413,16 @@ bool OurReader::readToken(Token& token) {
     ok = readString();
     break;
   case '\'':
-    if (features_.allowSingleQuotes_) {
+    if (features_.allowSingleQuotes_) 
+    {
     token.type_ = tokenString;
     ok = readStringSingleQuote();
     break;
-    } // else continue
+    }
+    else
+    {
+      [[fallthrough]];
+    }
   case '/':
     token.type_ = tokenComment;
     ok = readComment();

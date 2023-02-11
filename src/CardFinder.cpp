@@ -106,7 +106,10 @@ std::vector<TableCard>* CardFinder::findAllCards(cv::Mat & scene)
 }
 
 
-void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIOffset, const cv::Rect & tableBB, std::vector<TableCard>& runningList) const
+void CardFinder::identifyCardsInRegion( const cv::Mat & ROI, 
+										const cv::Point ROIOffset, 
+										const cv::Rect & tableBB, 
+										std::vector<TableCard>& runningList) const
 {
 	// Save a copy of the scene so we can turn it black to sort out stacked cards.
 	cv::Mat originalImage = ROI.clone();
@@ -238,7 +241,11 @@ void CardFinder::identifyCardsInRegion(const cv::Mat & ROI, const cv::Point ROIO
 }
 
 
-TableCard CardFinder::extractCardImage(const cv::Mat & fromScene, const cv::RotatedRect boundingRect, const cv::Point worldPosition, const cv::Rect & tableBB, const bool isFullCard) const
+TableCard CardFinder::extractCardImage( const cv::Mat & fromScene, 
+										const cv::RotatedRect boundingRect, 
+										const cv::Point worldPosition, 
+										[[maybe_unused]] const cv::Rect & tableBB, 
+										const bool isFullCard) const
 {
 	cv::Mat rotatedUpright;
 
@@ -457,7 +464,7 @@ void CardFinder::discernPartialCards()
 
 	std::vector<int> potentialCardIndicies;
 	//for (auto ptrMaker_itr = _cardMemory.begin(); ptrMaker_itr != _cardMemory.end(); ++ptrMaker_itr)
-	for (int index = 0; index < _cardMemory.size(); index++)
+	for (std::size_t index = 0; index < _cardMemory.size(); index++)
 	{
 		_cardMemory[index].hasBeenIdentified = false; // reset has been identified
 		potentialCardIndicies.push_back(index);
