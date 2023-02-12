@@ -1,0 +1,7 @@
+BasedOnStyle: Microsoft
+IndentWidth: 4
+Language: Cpp
+ConstructorInitializerAllOnOneLineOrOnePerLine : true
+AllowAllArgumentsOnNextLine : false
+BinPackArguments : false
+BinPackParameters : false
