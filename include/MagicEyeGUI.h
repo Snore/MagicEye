@@ -7,50 +7,51 @@
 
 class MagicEyeGUI
 {
-public:
-	MagicEyeGUI(const std::string windowName);
-	~MagicEyeGUI();
+  public:
+    MagicEyeGUI(const std::string windowName);
+    ~MagicEyeGUI();
 
-	void drawWindow() const;
+    void drawWindow() const;
 
-	void setMainDisplayFrame(const cv::Mat & image);
-	void setSecondaryDisplayFrame(const cv::Mat & image);
-	void setResultText(const std::string & textToDisplay);
-	void setResultCardImage(const cv::Mat & image, const int position);
-	int returnResultSelectionIndex(const cv::Point & clickCoord) const;
+    void setMainDisplayFrame(const cv::Mat &image);
+    void setSecondaryDisplayFrame(const cv::Mat &image);
+    void setResultText(const std::string &textToDisplay);
+    void setResultCardImage(const cv::Mat &image, const int position);
+    int returnResultSelectionIndex(const cv::Point &clickCoord) const;
 
-private:
-	static const int WIN_HEIGHT = 1010; //1000 might be more optimal, but will have to resize RESULT_HEIGHT and RESULT_WIDTH
-	static const int WIN_WIDTH = 1920;
-	static const int NUM_OF_RESULTS = 7;
-	static const int RESULT_WIDTH = 142;
-	static const int RESULT_HEIGHT = 200;
-	static const int TEXT_HEIGHT = 40;
-	cv::Mat _window;
+  private:
+    static const int WIN_HEIGHT =
+        1010; // 1000 might be more optimal, but will have to resize RESULT_HEIGHT and RESULT_WIDTH
+    static const int WIN_WIDTH = 1920;
+    static const int NUM_OF_RESULTS = 7;
+    static const int RESULT_WIDTH = 142;
+    static const int RESULT_HEIGHT = 200;
+    static const int TEXT_HEIGHT = 40;
+    cv::Mat _window;
 
-	// ROI boundss of the gui
-	cv::Rect _mainDisplayROIBounds;
-	cv::Rect _secondaryDisplayROIBounds;
-	cv::Rect _resultsTextROIBounds;
-	cv::Rect _resultsCardsLayoutBounds;
-	std::vector<cv::Rect> _resultCardsROIBounds;
+    // ROI boundss of the gui
+    cv::Rect _mainDisplayROIBounds;
+    cv::Rect _secondaryDisplayROIBounds;
+    cv::Rect _resultsTextROIBounds;
+    cv::Rect _resultsCardsLayoutBounds;
+    std::vector<cv::Rect> _resultCardsROIBounds;
 
-	// ROI's of the gui
-	cv::Mat _mainDisplayROI;
-	cv::Mat _secondaryDisplayROI;
-	cv::Mat _resultsTextROI;
-	std::vector<cv::Mat> _resultCardsROI;
+    // ROI's of the gui
+    cv::Mat _mainDisplayROI;
+    cv::Mat _secondaryDisplayROI;
+    cv::Mat _resultsTextROI;
+    std::vector<cv::Mat> _resultCardsROI;
 
-	// string placements
-	cv::Point _resultsTextPoint;
-	std::string _resultsText;
+    // string placements
+    cv::Point _resultsTextPoint;
+    std::string _resultsText;
 
-	std::string _windowName;
-	//cv::Size _lastMainDisplaySize; // break in case of dynamic resizing idea
+    std::string _windowName;
+    // cv::Size _lastMainDisplaySize; // break in case of dynamic resizing idea
 
-	// functions
-	void initializeROIs();
-	//cv::Mat scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const;
+    // functions
+    void initializeROIs();
+    // cv::Mat scaleImageToDimensions(const cv::Mat & image, const cv::Size fitToSize) const;
 };
 
 #endif // MAGIC_EYE_GUI_H

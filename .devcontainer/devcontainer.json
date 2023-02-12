@@ -1,25 +1,31 @@
 {
    "name": "MagicEye",
-   "build":
-   {
-      "dockerfile": "Dockerfile"
-   },
+   "build": { "dockerfile": "Dockerfile" },
    "features": 
    {
-      "ghcr.io/guiyomh/features/vim:0":
-      {
-         "version": "latest"
+      "ghcr.io/guiyomh/features/vim:0": { "version": "latest" },
+      "ghcr.io/devcontainers/features/git:1": { "version": "latest" },
+      "ghcr.io/devcontainers/features/git-lfs:1": { "version": "latest" }
+   },
+   "customizations": {
+      "vscode": {
+         "extensions": ["ms-vscode.cpptools-extension-pack",
+                        "cschlosser.doxdocgen",
+                        "xaver.clang-format"],
+         "settings": {
+            "editor.formatOnSave": true,
+            "editor.defaultFormatter": "xaver.clang-format"
+         }
       },
-      "ghcr.io/devcontainers/features/git:1":
-      {
-         "version": "latest"
-      },
-      "ghcr.io/devcontainers/features/git-lfs:1":
-      {
-         "version": "latest"
+      "codespaces": {
+         "extensions": ["ms-vscode.cpptools-extension-pack",
+                        "cschlosser.doxdocgen",
+                        "xaver.clang-format"],
+         "settings": {
+            "editor.formatOnSave": true,
+            "editor.defaultFormatter": "xaver.clang-format"
+         }
       }
    },
-   "extensions": ["ms-vscode.cpptools-extension-pack",
-                  "cschlosser.doxdocgen"],
    "remoteUser": "vscode"
 }
