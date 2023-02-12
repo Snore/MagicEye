@@ -95,64 +95,11 @@ MagicCard::MagicCard(const std::string name, const std::string imagePath, const 
 	locateCardRegions();
 }
 
-
-#ifdef UWP_VERSION
-#include <ppltasks.h>
-#include <codecvt>
-#include <sstream>
-
-cv::Mat readImageFromImageFile(std::string pathFromInstallDirectory /*Windows::Storage::StorageFile^ imageFile*/)
-{
-	/*
-	cv::Mat decodedImage;
-
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	Platform::String^ relativePath = ref new Platform::String(converter.from_bytes(pathFromInstallDirectory).c_str());
-	Platform::String^ imageFilePath = Windows::ApplicationModel::Package::Current->InstalledLocation->Path + relativePath;
-
-	Concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(imageFilePath)).then([](Windows::Storage::StorageFile^ imageFile) 
-	{
-		return Windows::Storage::FileIO::ReadBufferAsync(imageFile);
-	}).then([&decodedImage](Concurrency::task<Windows::Storage::Streams::IBuffer^> task) //[this, imageFile]
-	{
-		try
-		{
-			Windows::Storage::Streams::IBuffer^ buffer = task.get();
-			Windows::Storage::Streams::DataReader^ dataReader = Windows::Storage::Streams::DataReader::FromBuffer(buffer);
-				
-			std::vector<unsigned char> fileContent(dataReader->UnconsumedBufferLength);
-			dataReader->ReadBytes(Platform::ArrayReference<unsigned char>(fileContent.data(), fileContent.size()));
-			delete dataReader;
-
-			decodedImage = cv::imdecode(fileContent, CV_LOAD_IMAGE_COLOR);
-		}
-		catch (Platform::COMException^ ex)
-		{
-			assert(false);
-		}
-	}).wait();
-	*/
-
-	Platform::String^ localfolder = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
-	std::wstring folderNameW(localfolder->Begin());
-	std::string folderNameA(folderNameW.begin(), folderNameW.end());
-	std::string path = folderNameA + pathFromInstallDirectory;
-	cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_COLOR);
-
-	return image;
-}
-#endif // UWP_VERSION
-
 cv::Mat MagicCard::loadCardImage() const
 {
 	if (_imageFilePath.length() > 0)
 	{
-#ifdef UWP_VERSION
-		//cv::Mat cardImage = readImageFromImageFile(getFileFromPath(_imageFilePath));
-		cv::Mat cardImage = readImageFromImageFile(_imageFilePath);
-#else
 		cv::Mat cardImage = cv::imread(_imageFilePath, cv::IMREAD_COLOR);
-#endif // UWP_VERSION
 		if (!cardImage.data)
 		{
 			std::cerr << "Failed to load image for " << _name << " located at: " << _imageFilePath << "\n";
