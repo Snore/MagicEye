@@ -34,7 +34,7 @@ class TableCard
     bool isProbablySameTableCard(const TableCard &other) const;
     double distanceFrom(const TableCard &other) const;
     void setToAssumedCard(const TableCard &isProbablyThis);
-    void setToAssumedBoundingBox(const TableCard &isProbablyHere);
+    [[deprecated("Not used.")]] void setToAssumedBoundingBox(const TableCard &isProbablyHere);
     bool checkIfXSecondsSinceLastReference(const double seconds) const;
     void resetTimedReferenceCheck();
     void expireTimedReferenceCheck();
