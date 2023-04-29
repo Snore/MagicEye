@@ -13,9 +13,9 @@
 
 namespace CardMeasurements
 {
-const int HueBins = 16;
-const int SaturationBins = 4;
-const int ValueBins = 3;
+constexpr int HueBins = 16;
+constexpr int SaturationBins = 4;
+constexpr int ValueBins = 3;
 } // namespace CardMeasurements
 
 class MagicCard
